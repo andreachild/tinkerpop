@@ -156,6 +156,7 @@ public interface Channelizer extends ChannelHandler {
         public void connected() {
             if (supportsSsl()) {
                 try {
+                    // Block until the handshake is complete either successfully or with an error.
                     sslHandler.handshakeFuture().sync();
                 } catch (Exception ex) {
                     String errMsg = "Could not complete connection setup to the server. Ensure that SSL is correctly " +
