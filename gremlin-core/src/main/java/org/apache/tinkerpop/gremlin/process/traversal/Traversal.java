@@ -77,6 +77,7 @@ public interface Traversal<S, E> extends Iterator<E>, Serializable, Cloneable, A
         public static final String profile = "profile";
         public static final String discard = "discard";
         public static final String explain = "explain";
+        public static final String getTraversalExplanation = "getTraversalExplanation";
     }
 
     /**
@@ -241,11 +242,26 @@ public interface Traversal<S, E> extends Iterator<E>, Serializable, Cloneable, A
                 .addStep(new SideEffectCapStep<Object, TraversalMetrics>(this.asAdmin(), ProfileSideEffectStep.DEFAULT_METRICS_KEY));
     }
 
-    public default Traversal<S, E> explain() {
-        this.asAdmin().getGremlinLang().addStep(Symbols.explain);
-        final TraversalExplanation explanation = new TraversalExplanation(this.asAdmin());
-        this.asAdmin().addStep(new InjectStep<>(this.asAdmin(), explanation.toString()));
-        return this.asAdmin();
+    default String explain() {
+        this.asAdmin().getGremlinLang().addStep(Symbols.getTraversalExplanation);
+        TraversalExplanation explanation = getTraversalExplanation();
+        this.asAdmin().applyStrategies();
+        final Step<?, E> endStep = this.asAdmin().getEndStep();
+        if (endStep instanceof RemoteStep) {
+            final Traverser<E> traverser = endStep.next();
+            // this is expected to be toString() of TraversalExplanation
+            return String.valueOf(traverser.get());
+        }
+
+        return explanation.toString();
+    }
+
+    default TraversalExplanation getTraversalExplanation() {
+        if (!this.asAdmin().isLocked()) {
+            return new TraversalExplanation(this.asAdmin());
+        } else {
+            throw new IllegalStateException("The traversal is locked and can not be explained on a strategy-by-strategy basis");
+        }
     }
 
     /**

@@ -59,7 +59,7 @@ public class ProcessLimitedComputerSuite extends AbstractGremlinSuite {
             ProfileTest.Traversals.class,
             ProgramTest.Traversals.class,
             WriteTest.Traversals.class,
-            ExplainTest.Traversals.class,
+            //ExplainTest.Traversals.class,
             SideEffectTest.Traversals.class,
             SubgraphTest.Traversals.class,
             TreeTest.Traversals.class,
