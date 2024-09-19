@@ -76,6 +76,7 @@ public interface Traversal<S, E> extends Iterator<E>, Serializable, Cloneable, A
 
         public static final String profile = "profile";
         public static final String discard = "discard";
+        public static final String explain = "explain";
     }
 
     /**
@@ -240,15 +241,11 @@ public interface Traversal<S, E> extends Iterator<E>, Serializable, Cloneable, A
                 .addStep(new SideEffectCapStep<Object, TraversalMetrics>(this.asAdmin(), ProfileSideEffectStep.DEFAULT_METRICS_KEY));
     }
 
-    /**
-     * Return a {@link TraversalExplanation} that shows how this traversal will mutate with each applied {@link TraversalStrategy}.
-     *
-     * @return a traversal explanation
-     */
-    public default TraversalExplanation explain() {
-        if (this.asAdmin().isLocked())
-            throw new IllegalStateException("The traversal is locked and can not be explained on a strategy-by-strategy basis");
-        return new TraversalExplanation(this.asAdmin());
+    public default Traversal<S, E> explain() {
+        this.asAdmin().getGremlinLang().addStep(Symbols.explain);
+        final TraversalExplanation explanation = new TraversalExplanation(this.asAdmin());
+        this.asAdmin().addStep(new InjectStep<>(this.asAdmin(), explanation.toString()));
+        return this.asAdmin();
     }
 
     /**
