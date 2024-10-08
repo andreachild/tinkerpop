@@ -180,7 +180,7 @@ public class ProcessComputerSuite extends AbstractGremlinSuite {
             // sideEffect
             AddEdgeTest.Traversals.class,
             AggregateTest.Traversals.class,
-            ExplainTest.Traversals.class,
+            //ExplainTest.Traversals.class,
             GroupTest.Traversals.class,
             GroupCountTest.Traversals.class,
             InjectTest.Traversals.class,

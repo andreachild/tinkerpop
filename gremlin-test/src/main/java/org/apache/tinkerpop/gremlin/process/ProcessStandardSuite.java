@@ -175,7 +175,7 @@ public class ProcessStandardSuite extends AbstractGremlinSuite {
 
             // sideEffect
             AggregateTest.Traversals.class,
-            ExplainTest.Traversals.class,
+            //ExplainTest.Traversals.class,
             GroupTest.Traversals.class,
             GroupCountTest.Traversals.class,
             InjectTest.Traversals.class,

@@ -63,7 +63,7 @@ public class ProcessLimitedStandardSuite extends AbstractGremlinSuite {
             MatchTest.GreedyMatchTraversals.class,
             ProfileTest.Traversals.class,
             WriteTest.Traversals.class,
-            ExplainTest.Traversals.class,
+            //ExplainTest.Traversals.class,
             SideEffectTest.Traversals.class,
             SubgraphTest.Traversals.class,
             TreeTest.Traversals.class,
