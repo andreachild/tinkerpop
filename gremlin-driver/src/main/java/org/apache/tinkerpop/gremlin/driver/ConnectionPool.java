@@ -59,6 +59,7 @@ final class ConnectionPool {
     private final Client client;
     private final List<Connection> connections;
     private final AtomicInteger open;
+    private final Set<Connection> availableConnections = new CopyOnWriteArraySet<>();
     private final Set<Connection> bin = new CopyOnWriteArraySet<>();
     private final int minPoolSize;
     private final int maxPoolSize;
@@ -119,7 +120,9 @@ final class ConnectionPool {
                 connectionCreationFutures.add(CompletableFuture.runAsync(() -> {
                     final ConnectionResult result = new ConnectionResult();
                     try {
-                        this.connections.add(connectionFactory.create(this));
+                        Connection conn = connectionFactory.create(this);
+                        this.connections.add(conn);
+                        this.availableConnections.add(conn);
                         this.open.incrementAndGet();
                     } catch (ConnectionException e) {
                         result.setFailureCause(e);
@@ -217,6 +220,8 @@ final class ConnectionPool {
                     logger.debug("destroy {}", connection.getConnectionInfo());
                 destroyConnection(connection);
             } else {
+                logger.debug("Pool size is {} - returning connection to pool: {}", poolSize, connection.getConnectionInfo());
+                availableConnections.add(connection);
                 announceAvailableConnection();
             }
         }
@@ -347,7 +352,9 @@ final class ConnectionPool {
 
         final ConnectionResult result = new ConnectionResult();
         try {
-            connections.add(connectionFactory.create(this));
+            Connection conn = connectionFactory.create(this);
+            connections.add(conn);
+            availableConnections.add(conn);
         } catch (Exception ex) {
             open.decrementAndGet();
             logger.error(String.format(
@@ -395,7 +402,7 @@ final class ConnectionPool {
             if (bin.remove(connection)) {
                 final CompletableFuture<Void> closeFuture = connection.closeAsync();
                 closeFuture.whenComplete((v, t) ->
-                        logger.debug("Destroyed {}{}{}", connection.getConnectionInfo(), System.lineSeparator(), this.getPoolInfo()));
+                        logger.info("Destroyed {}{}{}", connection.getConnectionInfo(), System.lineSeparator(), this.getPoolInfo()));
             }
         }
     }
@@ -540,18 +547,19 @@ final class ConnectionPool {
      * @return The least-used connection from the pool. Returns null if no valid connection could be retrieved from the
      * pool.
      */
-    private synchronized Connection getAvailableConnection() {
+    private Connection getAvailableConnection() {
         Connection available = null;
-        int availableConnectionsCount = 0;
-        for (Connection connection : connections) {
+        for (Connection connection : availableConnections) {
             if (!connection.isDead() && !connection.isBorrowed().get()) {
                 // try to borrow connection
-                if (available == null && connection.isBorrowed().compareAndSet(false, true)) {
+                if (connection.isBorrowed().compareAndSet(false, true)) {
                     available = connection;
+                    break;
                 }
-                availableConnectionsCount++;
             }
         }
+        availableConnections.remove(available);
+        int availableConnectionsCount = availableConnections.size();
 
         // todo: may be add new connection when only 10-20% of pool is available?
         if (availableConnectionsCount == 0 && connections.size() < maxPoolSize) {

@@ -42,7 +42,7 @@ public class SslCheckHandler extends ChannelInboundHandlerAdapter {
             // it can be assumed that no bytes were received when the connection closed.
             final String errMsg = "Connection to server closed unexpectedly. Ensure that the server is still" +
                     " reachable. The server may be expecting SSL to be enabled.";
-            ctx.fireExceptionCaught(new RuntimeException(errMsg));
+            //ctx.fireExceptionCaught(new RuntimeException(errMsg));
         } else {
             super.channelInactive(ctx);
         }
