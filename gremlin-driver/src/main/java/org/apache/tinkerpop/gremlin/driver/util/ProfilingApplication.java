@@ -122,6 +122,7 @@ public class ProfilingApplication {
             final long requestCount = requests;
             final long reqSec = Math.round(requestCount / totalSeconds);
             System.out.println(String.format(StringUtils.rightPad(executionId, 10) + " requests: %s | time(s): %s | req/sec: %s | too slow: %s", requestCount, StringUtils.rightPad(String.valueOf(totalSeconds), 14), StringUtils.rightPad(String.valueOf(reqSec), 7), exercise ? "N/A" : tooSlow.get()));
+            Thread.sleep(20000);
             return reqSec;
         } catch (Exception ex) {
             ex.printStackTrace();

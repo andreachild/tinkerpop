@@ -119,7 +119,7 @@ final class Connection {
                     thisConnection.cluster.connectionScheduler().submit(() -> thisConnection.pool.definitelyDestroyConnection(thisConnection));
                 }
             });
-            logger.info("Created new connection for {}", uri);
+            logger.debug("Created new connection for {}", uri);
         } catch (Exception ex) {
             throw new ConnectionException(uri, "Could not open " + getConnectionInfo(true), ex);
         }

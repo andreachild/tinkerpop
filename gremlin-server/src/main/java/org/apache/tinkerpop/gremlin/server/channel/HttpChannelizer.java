@@ -40,6 +40,7 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import org.apache.tinkerpop.gremlin.server.handler.IdleConnectionHandler;
 import org.apache.tinkerpop.gremlin.server.util.ServerGremlinExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +63,11 @@ public class HttpChannelizer extends AbstractChannelizer {
     public void init(final ServerGremlinExecutor serverGremlinExecutor) {
         super.init(serverGremlinExecutor);
         httpGremlinEndpointHandler = new HttpGremlinEndpointHandler(gremlinExecutor, graphManager, settings);
+    }
+
+    @Override
+    public boolean supportsIdleMonitor() {
+        return true;
     }
 
     @Override
@@ -105,6 +111,7 @@ public class HttpChannelizer extends AbstractChannelizer {
         }
 
         pipeline.addLast("http-gremlin-handler", httpGremlinEndpointHandler);
+        pipeline.addLast("http-idle-handler", new IdleConnectionHandler());
         // Note that channelRead()'s do not propagate down the pipeline past HttpGremlinEndpointHandler
     }
 

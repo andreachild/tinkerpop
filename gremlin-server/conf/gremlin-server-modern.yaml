@@ -17,7 +17,7 @@
 
 host: localhost
 port: 8182
-evaluationTimeout: 30000
+evaluationTimeout: 30000000
 channelizer: org.apache.tinkerpop.gremlin.server.channel.HttpChannelizer
 graphs: {
   graph: conf/tinkergraph-empty.properties}
@@ -34,7 +34,7 @@ serializers:
 metrics: {
   slf4jReporter: {enabled: true, interval: 180000}}
 strictTransactionManagement: false
-idleConnectionTimeout: 0
+idleConnectionTimeout: 5000
 keepAliveInterval: 0
 maxInitialLineLength: 4096
 maxHeaderSize: 8192
@@ -44,5 +44,8 @@ maxAccumulationBufferComponents: 1024
 resultIterationBatchSize: 64
 writeBufferLowWaterMark: 32768
 writeBufferHighWaterMark: 65536
+maxWorkQueueSize: 65536
+threadPoolWorker: 8
+gremlinPool: 16
 ssl: {
   enabled: false}

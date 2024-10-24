@@ -1026,7 +1026,7 @@ public final class Cluster {
 
             // we distinguish between the hostScheduler and the connectionScheduler because you can end in deadlock
             // if all the possible jobs the driver allows for go to a single thread pool.
-            this.connectionScheduler = new ScheduledThreadPoolExecutor(contactPoints.size() + 1,
+            this.connectionScheduler = new ScheduledThreadPoolExecutor(20,
                     new BasicThreadFactory.Builder().namingPattern("gremlin-driver-conn-scheduler-%d").build());
 
             validationRequest = () -> RequestMessage.build(builder.validationRequest);
