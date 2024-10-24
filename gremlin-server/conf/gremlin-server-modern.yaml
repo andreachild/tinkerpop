@@ -34,7 +34,7 @@ serializers:
 metrics: {
   slf4jReporter: {enabled: true, interval: 180000}}
 strictTransactionManagement: false
-idleConnectionTimeout: 5000
+idleConnectionTimeout: 30000
 keepAliveInterval: 0
 maxInitialLineLength: 4096
 maxHeaderSize: 8192

@@ -18,6 +18,7 @@
  */
 package org.apache.tinkerpop.gremlin.server;
 
+import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
@@ -136,6 +137,9 @@ public abstract class AbstractChannelizer extends ChannelInitializer<SocketChann
     @Override
     public void initChannel(final SocketChannel ch) throws Exception {
         final ChannelPipeline pipeline = ch.pipeline();
+        ch.closeFuture().addListener((ChannelFutureListener) future -> {
+            logger.warn("Channel has been closed: {}", ch.id().asShortText());
+        });
 
         sslContext.ifPresent(sslContext -> pipeline.addLast(PIPELINE_SSL, sslContext.newHandler(ch.alloc())));
 

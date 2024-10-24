@@ -220,7 +220,7 @@ final class ConnectionPool {
                     logger.debug("destroy {}", connection.getConnectionInfo());
                 destroyConnection(connection);
             } else {
-                logger.info("Pool size is {} - returning connection to pool: {}", poolSize, connection.getConnectionInfo());
+                logger.debug("Pool size is {} - returning connection to pool: {}", poolSize, connection.getConnectionInfo());
                 availableConnections.add(connection);
                 announceAvailableConnection();
             }
