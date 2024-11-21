@@ -36,17 +36,8 @@ public class ProviderDefinedTypeSerializerTest {
     @Test
     public void test() throws Exception {
         TestBuffer buffer = new TestBuffer();
-        //ProviderDefinedType value = new ProviderDefinedType(new Point(1, 2));
         writer.write(new Point(1, 2), buffer);
-
-        byte[] b = new byte[buffer.readableBytes()];
-        buffer.readerIndex(0);
-        buffer.readBytes(b);
-        String hex = HexUtil.bytesToHexFriendly(b);
-        System.out.println("hex:" + hex);
-
-
-        buffer.readerIndex(0);
+        outputHex(buffer);
         final ProviderDefinedType result = reader.read(buffer);
         System.out.println(result);
         assertEquals("Point", result.getName());
@@ -58,17 +49,10 @@ public class ProviderDefinedTypeSerializerTest {
     @Test
     public void testNested() throws Exception {
         TestBuffer buffer = new TestBuffer();
-        ProviderDefinedType value = new ProviderDefinedType(new Person("Andrea", 123, new Address(1234, "Main St")));
+        ProviderDefinedType value = new ProviderDefinedType(new Person("Andrea", 123, new Address(1234, "Main St", "shhh..."), "ABC123"));
         writer.write(value, buffer);
+        outputHex(buffer);
 
-        byte[] b = new byte[buffer.readableBytes()];
-        buffer.readerIndex(0);
-        buffer.readBytes(b);
-        String hex = HexUtil.bytesToHexFriendly(b);
-        System.out.println("hex:" + hex);
-
-
-        buffer.readerIndex(0);
         final ProviderDefinedType result = reader.read(buffer);
         System.out.println(result);
         assertEquals("Person", result.getName());
@@ -77,8 +61,19 @@ public class ProviderDefinedTypeSerializerTest {
         assertEquals(123, result.getProperties().get("age"));
         assertTrue(result.getProperties().get("address") instanceof ProviderDefinedType);
         ProviderDefinedType address = (ProviderDefinedType) result.getProperties().get("address");
+        assertEquals("addy", address.getName());
+        assertEquals(2, address.getProperties().size());
         assertEquals(1234, address.getProperties().get("number"));
         assertEquals("Main St", address.getProperties().get("street"));
+    }
+
+    private void outputHex(TestBuffer buffer) {
+        byte[] b = new byte[buffer.readableBytes()];
+        buffer.readerIndex(0);
+        buffer.readBytes(b);
+        String hex = HexUtil.bytesToHexFriendly(b);
+        System.out.println("hex:" + hex);
+        buffer.readerIndex(0);
     }
 
     @ProviderDefined
@@ -100,16 +95,18 @@ public class ProviderDefinedTypeSerializerTest {
         }
     }
 
-    @ProviderDefined
+    @ProviderDefined(includedFields = {"name", "age", "address"})
     public static class Person {
         private final String name;
         private final int age;
         private final Address address;
+        private final String passport;
 
-        public Person(String name, int age, Address address) {
+        public Person(String name, int age, Address address, String passport) {
             this.name = name;
             this.age = age;
             this.address = address;
+            this.passport = passport;
         }
 
         public String getName() {
@@ -123,16 +120,22 @@ public class ProviderDefinedTypeSerializerTest {
         public Address getAddress() {
             return this.address;
         }
+
+        public String getPassport() {
+            return this.passport;
+        }
     }
 
-    @ProviderDefined
+    @ProviderDefined(name = "addy", excludedFields = {"secret"})
     public static class Address {
         private final int number;
         private final String street;
+        private final String secret;
 
-        public Address(int number, String street) {
+        public Address(int number, String street, String secret) {
             this.number = number;
             this.street = street;
+            this.secret = secret;
         }
 
         public String getStreet() {
@@ -141,6 +144,10 @@ public class ProviderDefinedTypeSerializerTest {
 
         public int getNumber() {
             return this.number;
+        }
+
+        public String getSecret() {
+            return this.secret;
         }
     }
 
