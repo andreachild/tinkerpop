@@ -19,6 +19,12 @@
 
 package org.apache.tinkerpop.gremlin.structure.io.binary.types;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.apache.kerby.util.HexUtil;
 import org.apache.tinkerpop.gremlin.structure.io.TestBuffer;
 import org.apache.tinkerpop.gremlin.structure.io.binary.GraphBinaryReader;
@@ -26,24 +32,39 @@ import org.apache.tinkerpop.gremlin.structure.io.binary.GraphBinaryWriter;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class ProviderDefinedTypeSerializerTest {
-    private ProviderDefinedTypeSerializer serializer = new ProviderDefinedTypeSerializer();
-    private GraphBinaryWriter writer = new GraphBinaryWriter();
-    private GraphBinaryReader reader = new GraphBinaryReader();
+    private final GraphBinaryWriter writer = new GraphBinaryWriter();
+    private final GraphBinaryReader reader = new GraphBinaryReader();
 
     @Test
     public void test() throws Exception {
         TestBuffer buffer = new TestBuffer();
         writer.write(new Point(1, 2), buffer);
         outputHex(buffer);
+
         final ProviderDefinedType result = reader.read(buffer);
         System.out.println(result);
         assertEquals("Point", result.getName());
         assertEquals(2, result.getProperties().size());
         assertEquals(1, result.getProperties().get("x"));
         assertEquals(2, result.getProperties().get("y"));
+    }
+
+    @Test
+    public void testNullableAttributes() throws Exception {
+        TestBuffer buffer = new TestBuffer();
+        writer.write(new Point(1, null), buffer);
+        outputHex(buffer);
+
+        final ProviderDefinedType result = reader.read(buffer);
+        System.out.println(result);
+        assertEquals("Point", result.getName());
+        assertEquals(2, result.getProperties().size());
+        assertEquals(1, result.getProperties().get("x"));
+        assertNull(result.getProperties().get("y"));
     }
 
     @Test
@@ -67,6 +88,79 @@ public class ProviderDefinedTypeSerializerTest {
         assertEquals("Main St", address.getProperties().get("street"));
     }
 
+    @Test
+    public void testList() throws Exception {
+        TestBuffer buffer = new TestBuffer();
+        List<Point> list = new ArrayList<>();
+        list.add(new Point(1, 2));
+        writer.write(list, buffer);
+        outputHex(buffer);
+
+        final List<ProviderDefinedType> result = reader.read(buffer);
+        System.out.println(result);
+        assertEquals(1, result.size());
+        assertEquals("Point", result.get(0).getName());
+        assertEquals(2, result.get(0).getProperties().size());
+        assertEquals(1, result.get(0).getProperties().get("x"));
+        assertEquals(2, result.get(0).getProperties().get("y"));
+    }
+
+    @Test
+    public void testSet() throws Exception {
+        TestBuffer buffer = new TestBuffer();
+        Set<Point> set = new HashSet<>();
+        set.add(new Point(1, 2));
+        writer.write(set, buffer);
+        outputHex(buffer);
+
+        final Set<ProviderDefinedType> result = reader.read(buffer);
+        System.out.println(result);
+        assertEquals(1, result.size());
+        ProviderDefinedType pdt = result.iterator().next();
+        assertEquals("Point", pdt.getName());
+        assertEquals(2, pdt.getProperties().size());
+        assertEquals(1, pdt.getProperties().get("x"));
+        assertEquals(2, pdt.getProperties().get("y"));
+    }
+
+    @Test
+    public void testMapValue() throws Exception {
+        TestBuffer buffer = new TestBuffer();
+        Map<String, Point> map = new HashMap<>();
+        map.put("first", new Point(1, 2));
+        writer.write(map, buffer);
+        outputHex(buffer);
+
+        final Map<String, ProviderDefinedType> result = reader.read(buffer);
+        System.out.println(result);
+        assertEquals(1, result.size());
+        ProviderDefinedType pdt = result.get("first");
+        assertEquals("Point", pdt.getName());
+        assertEquals(2, pdt.getProperties().size());
+        assertEquals(1, pdt.getProperties().get("x"));
+        assertEquals(2, pdt.getProperties().get("y"));
+    }
+
+    @Test
+    public void testMapKey() throws Exception {
+        TestBuffer buffer = new TestBuffer();
+        Map<Point, String> map = new HashMap<>();
+        map.put(new Point(1, 2), "first");
+        writer.write(map, buffer);
+        outputHex(buffer);
+
+        final Map<ProviderDefinedType, String> result = reader.read(buffer);
+        System.out.println(result);
+        assertEquals(1, result.size());
+        Map.Entry<ProviderDefinedType, String> entry = result.entrySet().iterator().next();
+        assertEquals("first", entry.getValue());
+        ProviderDefinedType pdt = entry.getKey();
+        assertEquals("Point", pdt.getName());
+        assertEquals(2, pdt.getProperties().size());
+        assertEquals(1, pdt.getProperties().get("x"));
+        assertEquals(2, pdt.getProperties().get("y"));
+    }
+
     private void outputHex(TestBuffer buffer) {
         byte[] b = new byte[buffer.readableBytes()];
         buffer.readerIndex(0);
@@ -78,19 +172,19 @@ public class ProviderDefinedTypeSerializerTest {
 
     @ProviderDefined
     public static class Point {
-        private final int x;
-        private final int y;
+        private final Integer x;
+        private final Integer y;
 
-        public Point(int x, int y) {
+        public Point(Integer x, Integer y) {
             this.x = x;
             this.y = y;
         }
 
-        public int getX() {
+        public Integer getX() {
             return this.x;
         }
 
-        public int getY() {
+        public Integer getY() {
             return this.y;
         }
     }
