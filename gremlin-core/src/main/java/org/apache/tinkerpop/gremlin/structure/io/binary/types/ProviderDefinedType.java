@@ -19,14 +19,50 @@
 
 package org.apache.tinkerpop.gremlin.structure.io.binary.types;
 
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class ProviderDefinedType {
 
     private final String name;
-    private final Map<String, ?> properties;
+    private final Map<String, Object> properties;
 
-    public ProviderDefinedType(String name, Map<String, ?> properties) {
+    public ProviderDefinedType(Object obj) throws IOException {
+        if (obj == null || !obj.getClass().isAnnotationPresent(ProviderDefined.class)) {
+            throw new IllegalArgumentException("Object is required and must be ProviderDefined");
+        }
+        Class<?> clazz = obj.getClass();
+
+        ProviderDefined providerDefined = clazz.getAnnotation(ProviderDefined.class);
+        this.name = providerDefined.name().isEmpty() ? clazz.getSimpleName() : providerDefined.name();
+
+        Set<String> include = providerDefined.includedFields().length > 0 ? new HashSet<>(Arrays.asList(providerDefined.includedFields())) : null;
+        Set<String> exclude = new HashSet<>(Arrays.asList(providerDefined.excludedFields()));
+
+        List<Field> fields = Arrays.stream(clazz.getDeclaredFields())
+                .filter(f -> !exclude.contains(f.getName())
+                        && (include == null || include.contains(f.getName()))).collect(Collectors.toList());
+
+        this.properties = new HashMap<>();
+        try {
+            for (Field field : fields) {
+                field.setAccessible(true);
+                properties.put(field.getName(), field.get(obj));
+            }
+        } catch (IllegalAccessException e) {
+            throw new IOException(e);
+        }
+    }
+
+    public ProviderDefinedType(String name, Map<String, Object> properties) {
         this.name = name;
         this.properties = properties;
     }
@@ -35,8 +71,12 @@ public class ProviderDefinedType {
         return this.name;
     }
 
-    public Map<String, ?> getProperties() {
+    public Map<String, Object> getProperties() {
         return this.properties;
+    }
+
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this);
     }
 
 }

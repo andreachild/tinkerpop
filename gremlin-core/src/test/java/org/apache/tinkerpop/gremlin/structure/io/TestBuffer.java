@@ -36,7 +36,7 @@ public class TestBuffer implements Buffer {
 
     @Override
     public int readableBytes() {
-        return buffer.position()+1;
+        return buffer.position();
     }
 
     @Override

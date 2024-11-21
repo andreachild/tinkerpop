@@ -19,16 +19,14 @@
 
 package org.apache.tinkerpop.gremlin.structure.io.binary.types;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.kerby.util.HexUtil;
 import org.apache.tinkerpop.gremlin.structure.io.TestBuffer;
 import org.apache.tinkerpop.gremlin.structure.io.binary.GraphBinaryReader;
 import org.apache.tinkerpop.gremlin.structure.io.binary.GraphBinaryWriter;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ProviderDefinedTypeSerializerTest {
     private ProviderDefinedTypeSerializer serializer = new ProviderDefinedTypeSerializer();
@@ -36,12 +34,10 @@ public class ProviderDefinedTypeSerializerTest {
     private GraphBinaryReader reader = new GraphBinaryReader();
 
     @Test
-    public void test() throws Exception{
+    public void test() throws Exception {
         TestBuffer buffer = new TestBuffer();
-        Map<String, Integer> m = new HashMap<>();
-        m.put("x", 1);
-        m.put("y", 2);
-        writer.write(new ProviderDefinedType("Point", m), buffer);
+        //ProviderDefinedType value = new ProviderDefinedType(new Point(1, 2));
+        writer.write(new Point(1, 2), buffer);
 
         byte[] b = new byte[buffer.readableBytes()];
         buffer.readerIndex(0);
@@ -51,9 +47,101 @@ public class ProviderDefinedTypeSerializerTest {
 
 
         buffer.readerIndex(0);
-        final Object result = reader.read(buffer);
+        final ProviderDefinedType result = reader.read(buffer);
         System.out.println(result);
+        assertEquals("Point", result.getName());
+        assertEquals(2, result.getProperties().size());
+        assertEquals(1, result.getProperties().get("x"));
+        assertEquals(2, result.getProperties().get("y"));
+    }
 
+    @Test
+    public void testNested() throws Exception {
+        TestBuffer buffer = new TestBuffer();
+        ProviderDefinedType value = new ProviderDefinedType(new Person("Andrea", 123, new Address(1234, "Main St")));
+        writer.write(value, buffer);
+
+        byte[] b = new byte[buffer.readableBytes()];
+        buffer.readerIndex(0);
+        buffer.readBytes(b);
+        String hex = HexUtil.bytesToHexFriendly(b);
+        System.out.println("hex:" + hex);
+
+
+        buffer.readerIndex(0);
+        final ProviderDefinedType result = reader.read(buffer);
+        System.out.println(result);
+        assertEquals("Person", result.getName());
+        assertEquals(3, result.getProperties().size());
+        assertEquals("Andrea", result.getProperties().get("name"));
+        assertEquals(123, result.getProperties().get("age"));
+        assertTrue(result.getProperties().get("address") instanceof ProviderDefinedType);
+        ProviderDefinedType address = (ProviderDefinedType) result.getProperties().get("address");
+        assertEquals(1234, address.getProperties().get("number"));
+        assertEquals("Main St", address.getProperties().get("street"));
+    }
+
+    @ProviderDefined
+    public static class Point {
+        private final int x;
+        private final int y;
+
+        public Point(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        public int getX() {
+            return this.x;
+        }
+
+        public int getY() {
+            return this.y;
+        }
+    }
+
+    @ProviderDefined
+    public static class Person {
+        private final String name;
+        private final int age;
+        private final Address address;
+
+        public Person(String name, int age, Address address) {
+            this.name = name;
+            this.age = age;
+            this.address = address;
+        }
+
+        public String getName() {
+            return this.name;
+        }
+
+        public int getAge() {
+            return this.age;
+        }
+
+        public Address getAddress() {
+            return this.address;
+        }
+    }
+
+    @ProviderDefined
+    public static class Address {
+        private final int number;
+        private final String street;
+
+        public Address(int number, String street) {
+            this.number = number;
+            this.street = street;
+        }
+
+        public String getStreet() {
+            return this.street;
+        }
+
+        public int getNumber() {
+            return this.number;
+        }
     }
 
 }

@@ -47,6 +47,7 @@ import org.apache.tinkerpop.gremlin.structure.io.binary.types.MapSerializer;
 import org.apache.tinkerpop.gremlin.structure.io.binary.types.DateTimeSerializer;
 import org.apache.tinkerpop.gremlin.structure.io.binary.types.PathSerializer;
 import org.apache.tinkerpop.gremlin.structure.io.binary.types.PropertySerializer;
+import org.apache.tinkerpop.gremlin.structure.io.binary.types.ProviderDefined;
 import org.apache.tinkerpop.gremlin.structure.io.binary.types.ProviderDefinedType;
 import org.apache.tinkerpop.gremlin.structure.io.binary.types.ProviderDefinedTypeSerializer;
 import org.apache.tinkerpop.gremlin.structure.io.binary.types.SetSerializer;
@@ -301,6 +302,10 @@ public class TypeSerializerRegistry {
 
     public <DT> TypeSerializer<DT> getSerializer(final Class<DT> type) throws IOException {
         TypeSerializer<?> serializer = serializers.get(type);
+
+        if (null == serializer && type.isAnnotationPresent(ProviderDefined.class)) {
+            serializer = serializersByDataType.get(DataType.PDT);
+        }
 
         if (null == serializer) {
             // Try to obtain the serializer by the type interface implementation or superclass,
