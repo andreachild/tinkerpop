@@ -19,23 +19,23 @@
 package org.apache.tinkerpop.gremlin.structure.io.binary.types;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 import org.apache.tinkerpop.gremlin.structure.io.Buffer;
 import org.apache.tinkerpop.gremlin.structure.io.binary.DataType;
 import org.apache.tinkerpop.gremlin.structure.io.binary.GraphBinaryReader;
 import org.apache.tinkerpop.gremlin.structure.io.binary.GraphBinaryWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProviderDefinedTypeSerializer extends SimpleTypeSerializer<ProviderDefinedType> {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProviderDefinedTypeSerializer.class);
     public ProviderDefinedTypeSerializer() {
         super(DataType.PDT);
     }
 
     @Override
     public ProviderDefinedType readValue(final Buffer buffer, final GraphBinaryReader context, final boolean nullable) throws IOException {
+        LOGGER.info("Reading provider defined type");
         if (nullable) {
             final byte valueFlag = buffer.readByte();
             if ((valueFlag & 1) == 1) {
@@ -52,11 +52,13 @@ public class ProviderDefinedTypeSerializer extends SimpleTypeSerializer<Provider
         String name = context.read(buffer);
         String className = context.read(buffer);
         Map<String, Object> properties = context.read(buffer);
+        LOGGER.info("Read provider defined type {}", className);
         return new ProviderDefinedType(name, properties, className);
     }
 
     @Override
     protected void writeValue(final ProviderDefinedType pdt, final Buffer buffer, final GraphBinaryWriter context) throws IOException {
+        LOGGER.info("Writing provider defined type {}", pdt.getFullyQualifiedType());
         context.write(pdt.getName(), buffer);
         context.write(pdt.getFullyQualifiedType(), buffer);
         context.write(pdt.getProperties(), buffer);
