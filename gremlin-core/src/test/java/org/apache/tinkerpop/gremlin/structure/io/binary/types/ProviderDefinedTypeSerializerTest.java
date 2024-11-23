@@ -51,6 +51,10 @@ public class ProviderDefinedTypeSerializerTest {
         assertEquals(2, result.getProperties().size());
         assertEquals(1, result.getProperties().get("x"));
         assertEquals(2, result.getProperties().get("y"));
+
+        Point point = ProviderDefinedTypeFactory.toObject(result, Point.class);
+        assertEquals(1, point.getX().intValue());
+        assertEquals(2, point.getY().intValue());
     }
 
     @Test
@@ -86,6 +90,10 @@ public class ProviderDefinedTypeSerializerTest {
         assertEquals(2, address.getProperties().size());
         assertEquals(1234, address.getProperties().get("number"));
         assertEquals("Main St", address.getProperties().get("street"));
+
+        Person person = ProviderDefinedTypeFactory.toObject(result, Person.class);
+        System.out.println(person);
+
     }
 
     @Test
@@ -168,81 +176,6 @@ public class ProviderDefinedTypeSerializerTest {
         String hex = HexUtil.bytesToHexFriendly(b);
         System.out.println("hex:" + hex);
         buffer.readerIndex(0);
-    }
-
-    @ProviderDefined
-    public static class Point {
-        private final Integer x;
-        private final Integer y;
-
-        public Point(Integer x, Integer y) {
-            this.x = x;
-            this.y = y;
-        }
-
-        public Integer getX() {
-            return this.x;
-        }
-
-        public Integer getY() {
-            return this.y;
-        }
-    }
-
-    @ProviderDefined(includedFields = {"name", "age", "address"})
-    public static class Person {
-        private final String name;
-        private final int age;
-        private final Address address;
-        private final String passport;
-
-        public Person(String name, int age, Address address, String passport) {
-            this.name = name;
-            this.age = age;
-            this.address = address;
-            this.passport = passport;
-        }
-
-        public String getName() {
-            return this.name;
-        }
-
-        public int getAge() {
-            return this.age;
-        }
-
-        public Address getAddress() {
-            return this.address;
-        }
-
-        public String getPassport() {
-            return this.passport;
-        }
-    }
-
-    @ProviderDefined(name = "addy", excludedFields = {"secret"})
-    public static class Address {
-        private final int number;
-        private final String street;
-        private final String secret;
-
-        public Address(int number, String street, String secret) {
-            this.number = number;
-            this.street = street;
-            this.secret = secret;
-        }
-
-        public String getStreet() {
-            return this.street;
-        }
-
-        public int getNumber() {
-            return this.number;
-        }
-
-        public String getSecret() {
-            return this.secret;
-        }
     }
 
 }

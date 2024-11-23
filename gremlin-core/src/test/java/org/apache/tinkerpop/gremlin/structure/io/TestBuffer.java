@@ -27,7 +27,7 @@ public class TestBuffer implements Buffer {
     private ByteBuffer buffer;
 
     public TestBuffer() {
-        this.buffer = ByteBuffer.allocate(256);
+        this.buffer = ByteBuffer.allocate(512);
     }
 
     public TestBuffer(final ByteBuffer buffer) {

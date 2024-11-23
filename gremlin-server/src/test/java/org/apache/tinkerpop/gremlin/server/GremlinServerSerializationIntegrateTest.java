@@ -27,6 +27,9 @@ import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Property;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
+import org.apache.tinkerpop.gremlin.structure.io.binary.types.Point;
+import org.apache.tinkerpop.gremlin.structure.io.binary.types.ProviderDefinedType;
+import org.apache.tinkerpop.gremlin.structure.io.binary.types.ProviderDefinedTypeFactory;
 import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 import org.apache.tinkerpop.gremlin.util.ser.AbstractMessageSerializer;
 import org.apache.tinkerpop.gremlin.util.ser.GraphBinaryMessageSerializerV4;
@@ -83,6 +86,20 @@ public class GremlinServerSerializationIntegrateTest extends AbstractGremlinServ
         final Vertex vertex = client.submit("gmodern.V(1)").one().getVertex();
 
         assertVertexWithProperties(vertex);
+    }
+
+    @Test
+    public void shouldHandlePdt() {
+        final Vertex vertex = client.submit("import org.apache.tinkerpop.gremlin.structure.io.binary.types.Point; p = new Point(1,2); gmodern.V(1).property('point',p)").one().getVertex();
+        ProviderDefinedType pdt = (ProviderDefinedType) vertex.property("point").value();
+        try {
+            Point result = ProviderDefinedTypeFactory.toObject(pdt, Point.class);
+            System.out.println(result);
+            assertEquals(1, result.getX().intValue());
+            assertEquals(2, result.getY().intValue());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test

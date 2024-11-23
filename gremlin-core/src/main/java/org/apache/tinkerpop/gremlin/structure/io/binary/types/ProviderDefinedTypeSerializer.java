@@ -50,13 +50,15 @@ public class ProviderDefinedTypeSerializer extends SimpleTypeSerializer<Provider
     @Override
     protected ProviderDefinedType readValue(final Buffer buffer, final GraphBinaryReader context) throws IOException {
         String name = context.read(buffer);
+        String className = context.read(buffer);
         Map<String, Object> properties = context.read(buffer);
-        return new ProviderDefinedType(name, properties);
+        return new ProviderDefinedType(name, properties, className);
     }
 
     @Override
     protected void writeValue(final ProviderDefinedType pdt, final Buffer buffer, final GraphBinaryWriter context) throws IOException {
         context.write(pdt.getName(), buffer);
+        context.write(pdt.getFullyQualifiedType(), buffer);
         context.write(pdt.getProperties(), buffer);
     }
 }

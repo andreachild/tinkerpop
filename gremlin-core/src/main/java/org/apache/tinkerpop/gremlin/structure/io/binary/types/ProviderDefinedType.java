@@ -34,6 +34,7 @@ public class ProviderDefinedType {
 
     private final String name;
     private final Map<String, Object> properties;
+    private final String fullyQualifiedType;
 
     public ProviderDefinedType(Object obj) throws IOException {
         if (obj == null || !obj.getClass().isAnnotationPresent(ProviderDefined.class)) {
@@ -43,6 +44,7 @@ public class ProviderDefinedType {
 
         ProviderDefined providerDefined = clazz.getAnnotation(ProviderDefined.class);
         this.name = providerDefined.name().isEmpty() ? clazz.getSimpleName() : providerDefined.name();
+        this.fullyQualifiedType = clazz.getCanonicalName();
 
         Set<String> include = providerDefined.includedFields().length > 0 ? new HashSet<>(Arrays.asList(providerDefined.includedFields())) : null;
         Set<String> exclude = new HashSet<>(Arrays.asList(providerDefined.excludedFields()));
@@ -62,9 +64,10 @@ public class ProviderDefinedType {
         }
     }
 
-    public ProviderDefinedType(String name, Map<String, Object> properties) {
+    public ProviderDefinedType(String name, Map<String, Object> properties, String fullyQualifiedType) {
         this.name = name;
         this.properties = properties;
+        this.fullyQualifiedType = fullyQualifiedType;
     }
 
     public String getName() {
@@ -73,6 +76,10 @@ public class ProviderDefinedType {
 
     public Map<String, Object> getProperties() {
         return this.properties;
+    }
+
+    public String getFullyQualifiedType() {
+        return this.fullyQualifiedType;
     }
 
     public String toString() {
