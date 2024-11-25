@@ -21,34 +21,37 @@ package org.apache.tinkerpop.gremlin.structure.io.binary.types;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@ProviderDefined(name = "addy", excludedFields = {"secret"})
-public class Address {
-    private int number;
-    private String street;
-    private String secret;
+@ProviderDefined
+public class UnsignedPoint {
+    private UnsignedInt x;
+    private UnsignedInt y;
 
-    public Address() {
+    public UnsignedPoint() {
     }
 
-    public Address(int number, String street, String secret) {
-        this.number = number;
-        this.street = street;
-        this.secret = secret;
+    public UnsignedPoint(UnsignedInt x, UnsignedInt y) {
+        this.x = x;
+        this.y = y;
     }
 
-    public String getStreet() {
-        return this.street;
+    public UnsignedInt getX() {
+        return this.x;
     }
 
-    public int getNumber() {
-        return this.number;
+    public void setX(UnsignedInt x) {
+        this.x = x;
     }
 
-    public String getSecret() {
-        return this.secret;
+    public UnsignedInt getY() {
+        return this.y;
+    }
+
+    public void setY(UnsignedInt y) {
+        this.y = y;
     }
 
     public String toString() {
         return ToStringBuilder.reflectionToString(this);
     }
+
 }

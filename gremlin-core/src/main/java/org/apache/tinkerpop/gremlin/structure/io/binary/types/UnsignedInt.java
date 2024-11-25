@@ -21,31 +21,23 @@ package org.apache.tinkerpop.gremlin.structure.io.binary.types;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@ProviderDefined(name = "addy", excludedFields = {"secret"})
-public class Address {
-    private int number;
-    private String street;
-    private String secret;
+@ProviderDefined
+public class UnsignedInt {
+    private String value;
 
-    public Address() {
+    public UnsignedInt() {
     }
 
-    public Address(int number, String street, String secret) {
-        this.number = number;
-        this.street = street;
-        this.secret = secret;
+    public UnsignedInt(String value) {
+        this.value = value;
     }
 
-    public String getStreet() {
-        return this.street;
+    public String getValue() {
+        return this.value;
     }
 
-    public int getNumber() {
-        return this.number;
-    }
-
-    public String getSecret() {
-        return this.secret;
+    public void setValue(String value) {
+        this.value = value;
     }
 
     public String toString() {
