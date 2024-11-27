@@ -170,7 +170,25 @@ public class ProviderDefinedTypeSerializerTest {
     }
 
     @Test
-    public void testFakeUnsigned() throws Exception {
+    public void testFakeUnsignedInt() throws Exception {
+        TestBuffer buffer = new TestBuffer();
+        ProviderDefinedType value = new ProviderDefinedType(new UnsignedInt("5000000000"));
+        writer.write(value, buffer);
+        outputHex(buffer);
+
+        final ProviderDefinedType result = reader.read(buffer);
+        System.out.println(result);
+        assertEquals("UnsignedInt", result.getName());
+        assertEquals(1, result.getProperties().size());
+        assertEquals("5000000000", result.getProperties().get("value"));
+
+        UnsignedInt unsignedInt = ProviderDefinedTypeFactory.toObject(result, UnsignedInt.class);
+        assertEquals("5000000000", unsignedInt.getValue());
+        System.out.println(unsignedInt);
+    }
+
+    @Test
+    public void testFakeUnsignedPoint() throws Exception {
         TestBuffer buffer = new TestBuffer();
         ProviderDefinedType value = new ProviderDefinedType(new UnsignedPoint(new UnsignedInt("5000000000"), new UnsignedInt("10000000000")));
         writer.write(value, buffer);
@@ -189,7 +207,6 @@ public class ProviderDefinedTypeSerializerTest {
         assertEquals("5000000000", up.getX().getValue());
         assertEquals("10000000000", up.getY().getValue());
         System.out.println(up);
-
     }
 
     private void outputHex(TestBuffer buffer) {
