@@ -53,7 +53,7 @@ public class ProviderDefinedTypeSerializer extends SimpleTypeSerializer<Provider
         String className = context.read(buffer);
         Map<String, Object> properties = context.read(buffer);
         LOGGER.info("Read provider defined type {}", className);
-        return new ProviderDefinedType(name, properties, className);
+        return new ProviderDefinedType(name, className, properties);
     }
 
     @Override

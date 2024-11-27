@@ -95,6 +95,9 @@ public class GremlinServerSerializationIntegrateTest extends AbstractGremlinServ
     public void shouldHandlePdtScript() {
         final Vertex vertex = client.submit("import org.apache.tinkerpop.gremlin.structure.io.binary.types.Point; p = new Point(1,2); gmodern.V(1).property('point',p)").one().getVertex();
         ProviderDefinedType pdt = (ProviderDefinedType) vertex.property("point").value();
+        assertEquals(1, pdt.getProperties().get("x"));
+        assertEquals(2, pdt.getProperties().get("y"));
+
         try {
             Point result = ProviderDefinedTypeFactory.toObject(pdt, Point.class);
             System.out.println(result);

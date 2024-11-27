@@ -64,10 +64,10 @@ public class ProviderDefinedType {
         }
     }
 
-    public ProviderDefinedType(String name, Map<String, Object> properties, String fullyQualifiedType) {
+    public ProviderDefinedType(String name, String fullyQualifiedType, Map<String, Object> properties) {
         this.name = name;
-        this.properties = properties;
         this.fullyQualifiedType = fullyQualifiedType;
+        this.properties = properties;
     }
 
     public String getName() {
