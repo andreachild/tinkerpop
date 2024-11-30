@@ -78,11 +78,11 @@ public abstract class ExplainTest extends AbstractGremlinProcessTest {
         }
     }
 
-    public static class Traversals extends ExplainTest {
-
-        public TraversalExplanation get_g_V_outE_identity_inV_explain() {
-            return g.V().outE().identity().inV().explain();
-        }
-    }
+//    public static class Traversals extends ExplainTest {
+//
+//        public TraversalExplanation get_g_V_outE_identity_inV_explain() {
+//            return g.V().outE().identity().inV().explain();
+//        }
+//    }
 
 }

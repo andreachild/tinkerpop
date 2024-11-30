@@ -18,27 +18,13 @@
  */
 package org.apache.tinkerpop.gremlin.structure.io.binary.types;
 
-import org.apache.tinkerpop.gremlin.structure.io.binary.GraphBinaryReader;
-import org.apache.tinkerpop.gremlin.structure.io.binary.GraphBinaryWriter;
-import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
-import org.apache.tinkerpop.gremlin.process.traversal.TraversalStrategy;
+import java.io.IOException;
 import org.apache.tinkerpop.gremlin.process.traversal.util.TraversalExplanation;
 import org.apache.tinkerpop.gremlin.structure.io.Buffer;
-import org.javatuples.Pair;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import org.apache.tinkerpop.gremlin.structure.io.binary.GraphBinaryReader;
+import org.apache.tinkerpop.gremlin.structure.io.binary.GraphBinaryWriter;
 
 public class TraversalExplanationSerializer extends SimpleTypeSerializer<TraversalExplanation> implements TransformSerializer<TraversalExplanation> {
-    private static final String ORIGINAL = "original";
-    private static final String FINAL = "final";
-    private static final String INTERMEDIATE = "intermediate";
-    private static final String CATEGORY = "category";
-    private static final String TRAVERSAL = "traversal";
-    private static final String STRATEGY = "strategy";
 
     public TraversalExplanationSerializer() {
         super(null);
@@ -54,31 +40,8 @@ public class TraversalExplanationSerializer extends SimpleTypeSerializer<Travers
         throw new IOException("A TraversalExplanation should not be written individually");
     }
 
-    /**
-     * Creates a Map containing "original", "intermediate" and "final" keys.
-     */
     @Override
     public Object transform(final TraversalExplanation value) {
-        final Map<String, Object> result = new HashMap<>();
-        result.put(ORIGINAL, getTraversalSteps(value.getOriginalTraversal()));
-
-        final List<Pair<TraversalStrategy, Traversal.Admin<?, ?>>> strategyTraversals = value.getStrategyTraversals();
-
-        result.put(INTERMEDIATE,
-                strategyTraversals.stream().map(pair -> {
-                    final Map<String, Object> item = new HashMap<>();
-                    item.put(STRATEGY, pair.getValue0().toString());
-                    item.put(CATEGORY, pair.getValue0().getTraversalCategory().getSimpleName());
-                    item.put(TRAVERSAL, getTraversalSteps(pair.getValue1()));
-                    return item;
-                }).collect(Collectors.toList()));
-
-        result.put(FINAL, getTraversalSteps(strategyTraversals.isEmpty()
-                ? value.getOriginalTraversal() : strategyTraversals.get(strategyTraversals.size() - 1).getValue1()));
-        return result;
-    }
-
-    private static List<String> getTraversalSteps(final Traversal.Admin<?, ?> t) {
-        return t.getSteps().stream().map(Object::toString).collect(Collectors.toList());
+        return value.toString();
     }
 }
