@@ -21,6 +21,7 @@ package gremlingo
 
 import (
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"sync"
 )
@@ -37,7 +38,7 @@ const authenticationFailed = uint16(151)
 
 type protocolBase struct {
 	protocol
-
+	request     *request
 	transporter transporter
 }
 
@@ -51,10 +52,37 @@ type gremlinServerWSProtocol struct {
 	wg         *sync.WaitGroup
 }
 
+func (protocol *gremlinServerWSProtocol) httpReadLoop(resultSets *synchronizedMap, errorCallback func()) {
+	defer protocol.wg.Done()
+
+	//for {
+	fmt.Println("Http Read loop")
+	msg, err := protocol.transporter.ReadHttp()
+
+	// Deserialize message and unpack.
+	fmt.Println("Reading message")
+	resp, err := protocol.serializer.deserializeMessage(msg)
+	if err != nil {
+		protocol.logHandler.logf(Error, logErrorGeneric, "httpReadLoop()", err.Error())
+		readErrorHandler(resultSets, errorCallback, err, protocol.logHandler)
+		return
+	}
+
+	fmt.Println("Deserialized message")
+	resp.responseID = protocol.request.requestID
+	err = protocol.responseHandler(resultSets, resp)
+	if err != nil {
+		readErrorHandler(resultSets, errorCallback, err, protocol.logHandler)
+		return
+	}
+	//}
+}
+
 func (protocol *gremlinServerWSProtocol) readLoop(resultSets *synchronizedMap, errorCallback func()) {
 	defer protocol.wg.Done()
 
 	for {
+		fmt.Println("Read loop")
 		// Read from transport layer. If the channel is closed, this will error out and exit.
 		msg, err := protocol.transporter.Read()
 		protocol.mutex.Lock()
@@ -72,6 +100,7 @@ func (protocol *gremlinServerWSProtocol) readLoop(resultSets *synchronizedMap, e
 		}
 
 		// Deserialize message and unpack.
+		fmt.Println("Reading message")
 		resp, err := protocol.serializer.deserializeMessage(msg)
 		if err != nil {
 			protocol.logHandler.logf(Error, logErrorGeneric, "gremlinServerWSProtocol.readLoop()", err.Error())
@@ -149,6 +178,7 @@ func (protocol *gremlinServerWSProtocol) responseHandler(resultSets *synchronize
 }
 
 func (protocol *gremlinServerWSProtocol) write(request *request) error {
+	protocol.request = request
 	bytes, err := protocol.serializer.serializeMessage(request)
 	if err != nil {
 		return err
@@ -194,6 +224,7 @@ func newGremlinServerWSProtocol(handler *logHandler, transporterType Transporter
 		return nil, err
 	}
 	wg.Add(1)
-	go gremlinProtocol.readLoop(results, errorCallback)
+	//go gremlinProtocol.readLoop(results, errorCallback)
+	go gremlinProtocol.httpReadLoop(results, errorCallback)
 	return gremlinProtocol, nil
 }

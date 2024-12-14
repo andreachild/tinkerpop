@@ -40,6 +40,7 @@ func getTransportLayer(transporterType TransporterType, url string, connSettings
 			logHandler:   logHandler,
 			connSettings: connSettings,
 			writeChannel: make(chan []byte, writeChannelSizeDefault),
+			readChannel:  make(chan []byte, writeChannelSizeDefault),
 			wg:           &sync.WaitGroup{},
 		}
 	default:
