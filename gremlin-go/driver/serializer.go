@@ -22,7 +22,10 @@ package gremlingo
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
+	"fmt"
 	"math/big"
+	"os"
 	"reflect"
 	"strings"
 	"sync"
@@ -112,69 +115,89 @@ func (gs *graphBinarySerializer) buildMessage(id uuid.UUID, mimeLen byte, op str
 	buffer := bytes.Buffer{}
 
 	// mime header
-	buffer.WriteByte(mimeLen)
-	buffer.WriteString(graphBinaryMimeType)
+	//buffer.WriteByte(mimeLen)
+	//buffer.WriteString(graphBinaryMimeType)
 
 	// Version
 	buffer.WriteByte(versionByte)
 
 	// Request uuid
-	bigIntUUID := uuidToBigInt(id)
-	lower := bigIntUUID.Uint64()
-	upperBigInt := bigIntUUID.Rsh(&bigIntUUID, 64)
-	upper := upperBigInt.Uint64()
-	err := binary.Write(&buffer, binary.BigEndian, upper)
-	if err != nil {
-		return nil, err
-	}
-	err = binary.Write(&buffer, binary.BigEndian, lower)
-	if err != nil {
-		return nil, err
-	}
-
+	//bigIntUUID := uuidToBigInt(id)
+	//lower := bigIntUUID.Uint64()
+	//upperBigInt := bigIntUUID.Rsh(&bigIntUUID, 64)
+	//upper := upperBigInt.Uint64()
+	//err := binary.Write(&buffer, binary.BigEndian, upper)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//err = binary.Write(&buffer, binary.BigEndian, lower)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
 	// op
-	err = binary.Write(&buffer, binary.BigEndian, uint32(len(op)))
+	//err := binary.Write(&buffer, binary.BigEndian, uint32(len(op)))
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//_, err = buffer.WriteString(op)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//// processor
+	//err = binary.Write(&buffer, binary.BigEndian, uint32(len(processor)))
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//_, err = buffer.WriteString(processor)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	////args
+	//err = binary.Write(&buffer, binary.BigEndian, uint32(len(args)))
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//for k, v := range args {
+	//	_, err := gs.ser.write(k, &buffer)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//
+	//	switch t := v.(type) {
+	//	case []byte:
+	//		_, err = buffer.Write(t)
+	//	default:
+	//		_, err = gs.ser.write(t, &buffer)
+	//	}
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//}
+
+	//_, err := gs.ser.writeValue(make(map[string]string), &buffer, false)
+	//
+	//gremlin := args["gremlin"]
+	//_, err = gs.ser.writeValue(gremlin, &buffer, false)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	_, err := gs.ser.writeValue(args, &buffer, false)
+	if err != nil {
+		return nil, err
+	}
+	gremlin := args["gremlin"]
+	_, err = gs.ser.writeValue(gremlin, &buffer, false)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = buffer.WriteString(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// processor
-	err = binary.Write(&buffer, binary.BigEndian, uint32(len(processor)))
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = buffer.WriteString(processor)
-	if err != nil {
-		return nil, err
-	}
-
-	// args
-	err = binary.Write(&buffer, binary.BigEndian, uint32(len(args)))
-	if err != nil {
-		return nil, err
-	}
-	for k, v := range args {
-		_, err = gs.ser.write(k, &buffer)
-		if err != nil {
-			return nil, err
-		}
-
-		switch t := v.(type) {
-		case []byte:
-			_, err = buffer.Write(t)
-		default:
-			_, err = gs.ser.write(t, &buffer)
-		}
-		if err != nil {
-			return nil, err
-		}
-	}
 	return buffer.Bytes(), nil
 }
 
@@ -193,36 +216,44 @@ func (gs graphBinarySerializer) deserializeMessage(message []byte) (response, er
 		return msg, newError(err0405ReadValueInvalidNullInputError)
 	}
 
-	// Skip version and nullable byte.
+	str := hex.EncodeToString(message)
+	msg.responseResult.data = str
+	//Skip version and nullable byte.
 	i := 2
-	id, err := readUuid(&message, &i)
+	//id, err := readUuid(&message, &i)
+	//if err != nil {
+	//	return msg, err
+	//}
+	//msg.responseID = id.(uuid.UUID)
+	//msg.responseStatus.code = uint16(readUint32Safe(&message, &i) & 0xFF)
+	//isMessageValid := readByteSafe(&message, &i)
+	//if isMessageValid == 0 {
+	//	message, err := readString(&message, &i)
+	//	if err != nil {
+	//		return msg, err
+	//	}
+	//	msg.responseStatus.message = message.(string)
+	//}
+	//attr, err := readMapUnqualified(&message, &i)
+	//if err != nil {
+	//	return msg, err
+	//}
+	//msg.responseStatus.attributes = attr.(map[string]interface{})
+	//meta, err := readMapUnqualified(&message, &i)
+	//if err != nil {
+	//	return msg, err
+	//}
+	//msg.responseResult.meta = meta.(map[string]interface{})
+	n, err := readFullyQualifiedNullable(&message, &i, true)
 	if err != nil {
 		return msg, err
 	}
-	msg.responseID = id.(uuid.UUID)
-	msg.responseStatus.code = uint16(readUint32Safe(&message, &i) & 0xFF)
-	isMessageValid := readByteSafe(&message, &i)
-	if isMessageValid == 0 {
-		message, err := readString(&message, &i)
-		if err != nil {
-			return msg, err
-		}
-		msg.responseStatus.message = message.(string)
-	}
-	attr, err := readMapUnqualified(&message, &i)
-	if err != nil {
-		return msg, err
-	}
-	msg.responseStatus.attributes = attr.(map[string]interface{})
-	meta, err := readMapUnqualified(&message, &i)
-	if err != nil {
-		return msg, err
-	}
-	msg.responseResult.meta = meta.(map[string]interface{})
-	msg.responseResult.data, err = readFullyQualifiedNullable(&message, &i, true)
-	if err != nil {
-		return msg, err
-	}
+	_, _ = fmt.Fprintf(os.Stdout, "Deserialized data : %s\n", n)
+	msg.responseResult.data = n
+	msg.responseStatus.code = 200
+	msg.responseStatus.message = "OK"
+	msg.responseStatus.attributes = map[string]interface{}{}
+	//msg.responseID = uuid.New()
 	return msg, nil
 }
 
