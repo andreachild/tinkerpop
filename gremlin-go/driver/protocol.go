@@ -52,7 +52,17 @@ type gremlinServerWSProtocol struct {
 	wg         *sync.WaitGroup
 }
 
-func (protocol *gremlinServerWSProtocol) httpReadLoop(resultSets *synchronizedMap, errorCallback func()) {
+type httpProtocol struct {
+	*protocolBase
+
+	serializer serializer
+	logHandler *logHandler
+	closed     bool
+	mutex      sync.Mutex
+	wg         *sync.WaitGroup
+}
+
+func (protocol *httpProtocol) readLoop(resultSets *synchronizedMap, errorCallback func()) {
 	defer protocol.wg.Done()
 
 	//for {
@@ -224,7 +234,111 @@ func newGremlinServerWSProtocol(handler *logHandler, transporterType Transporter
 		return nil, err
 	}
 	wg.Add(1)
-	//go gremlinProtocol.readLoop(results, errorCallback)
-	go gremlinProtocol.httpReadLoop(results, errorCallback)
+	go gremlinProtocol.readLoop(results, errorCallback)
 	return gremlinProtocol, nil
+}
+
+func newHttpProtocol(handler *logHandler, transporterType TransporterType, url string, connSettings *connectionSettings, results *synchronizedMap,
+	errorCallback func()) (protocol, error) {
+	wg := &sync.WaitGroup{}
+	transport, err := getTransportLayer(transporterType, url, connSettings, handler)
+	if err != nil {
+		return nil, err
+	}
+
+	gremlinProtocol := &httpProtocol{
+		protocolBase: &protocolBase{transporter: transport},
+		serializer:   newGraphBinarySerializer(handler),
+		logHandler:   handler,
+		closed:       false,
+		mutex:        sync.Mutex{},
+		wg:           wg,
+	}
+	err = gremlinProtocol.transporter.Connect()
+	if err != nil {
+		return nil, err
+	}
+	wg.Add(1)
+	go gremlinProtocol.readLoop(results, errorCallback)
+	return gremlinProtocol, nil
+}
+
+func (protocol *httpProtocol) responseHandler(resultSets *synchronizedMap, response response) error {
+	responseID, statusCode, metadata, data := response.responseID, response.responseStatus.code,
+		response.responseResult.meta, response.responseResult.data
+	responseIDString := responseID.String()
+	if resultSets.load(responseIDString) == nil {
+		return newError(err0501ResponseHandlerResultSetNotCreatedError)
+	}
+	if aggregateTo, ok := metadata["aggregateTo"]; ok {
+		resultSets.load(responseIDString).setAggregateTo(aggregateTo.(string))
+	}
+
+	// Handle status codes appropriately. If status code is http.StatusPartialContent, we need to re-read data.
+	if statusCode == http.StatusNoContent {
+		resultSets.load(responseIDString).addResult(&Result{make([]interface{}, 0)})
+		resultSets.load(responseIDString).Close()
+		protocol.logHandler.logf(Debug, readComplete, responseIDString)
+	} else if statusCode == http.StatusOK {
+		// Add data and status attributes to the ResultSet.
+		resultSets.load(responseIDString).addResult(&Result{data})
+		resultSets.load(responseIDString).setStatusAttributes(response.responseStatus.attributes)
+		resultSets.load(responseIDString).Close()
+		protocol.logHandler.logf(Debug, readComplete, responseIDString)
+	} else if statusCode == http.StatusPartialContent {
+		// Add data to the ResultSet.
+		resultSets.load(responseIDString).addResult(&Result{data})
+	} else if statusCode == http.StatusProxyAuthRequired || statusCode == authenticationFailed {
+		// http status code 151 is not defined here, but corresponds with 403, i.e. authentication has failed.
+		// Server has requested basic auth.
+		authInfo := protocol.transporter.getAuthInfo()
+		if ok, username, password := authInfo.GetBasicAuth(); ok {
+			authBytes := make([]byte, 0)
+			authBytes = append(authBytes, 0)
+			authBytes = append(authBytes, []byte(username)...)
+			authBytes = append(authBytes, 0)
+			authBytes = append(authBytes, []byte(password)...)
+			encoded := base64.StdEncoding.EncodeToString(authBytes)
+			request := makeBasicAuthRequest(encoded)
+			err := protocol.write(&request)
+			if err != nil {
+				return err
+			}
+		} else {
+			resultSets.load(responseIDString).Close()
+			return newError(err0503ResponseHandlerAuthError, response.responseStatus, response.responseResult)
+		}
+	} else {
+		newError := newError(err0502ResponseHandlerReadLoopError, response.responseStatus, statusCode)
+		resultSets.load(responseIDString).setError(newError)
+		resultSets.load(responseIDString).Close()
+		protocol.logHandler.logf(Error, logErrorGeneric, "gremlinServerWSProtocol.responseHandler()", newError.Error())
+	}
+	return nil
+}
+
+func (protocol *httpProtocol) write(request *request) error {
+	protocol.request = request
+	bytes, err := protocol.serializer.serializeMessage(request)
+	if err != nil {
+		return err
+	}
+	return protocol.transporter.Write(bytes)
+}
+
+func (protocol *httpProtocol) close(wait bool) error {
+	var err error
+
+	protocol.mutex.Lock()
+	if !protocol.closed {
+		err = protocol.transporter.Close()
+		protocol.closed = true
+	}
+	protocol.mutex.Unlock()
+
+	if wait {
+		protocol.wg.Wait()
+	}
+
+	return err
 }
