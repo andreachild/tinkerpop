@@ -35,7 +35,7 @@ func getTransportLayer(transporterType TransporterType, url string, connSettings
 	var transporter transporter
 	switch transporterType {
 	case Gorilla:
-		transporter = &gorillaTransporter{
+		transporter = &httpTransporter{
 			url:          url,
 			logHandler:   logHandler,
 			connSettings: connSettings,
