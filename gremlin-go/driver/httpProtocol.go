@@ -37,11 +37,10 @@ type httpProtocol struct {
 }
 
 func (protocol *httpProtocol) readLoop(resultSets *synchronizedMap, errorCallback func()) {
-	defer protocol.wg.Done()
+	//defer protocol.wg.Done()
 
-	//for {
 	fmt.Println("Http Read loop")
-	msg, err := protocol.transporter.ReadHttp()
+	msg, err := protocol.transporter.Read()
 
 	// Deserialize message and unpack.
 	fmt.Println("Reading message")
@@ -59,13 +58,13 @@ func (protocol *httpProtocol) readLoop(resultSets *synchronizedMap, errorCallbac
 		readErrorHandler(resultSets, errorCallback, err, protocol.logHandler)
 		return
 	}
-	//}
+	fmt.Println("Read done")
 }
 
-func newHttpProtocol(handler *logHandler, transporterType TransporterType, url string, connSettings *connectionSettings, results *synchronizedMap,
+func newHttpProtocol(handler *logHandler, url string, connSettings *connectionSettings, results *synchronizedMap,
 	errorCallback func()) (protocol, error) {
 	wg := &sync.WaitGroup{}
-	transport, err := getTransportLayer(transporterType, url, connSettings, handler)
+	transport, err := getTransportLayer(Http, url, connSettings, handler)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +81,7 @@ func newHttpProtocol(handler *logHandler, transporterType TransporterType, url s
 	if err != nil {
 		return nil, err
 	}
-	wg.Add(1)
+	//wg.Add(1)
 	go gremlinProtocol.readLoop(results, errorCallback)
 	return gremlinProtocol, nil
 }

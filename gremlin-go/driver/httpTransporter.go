@@ -264,31 +264,13 @@ func (transporter *httpTransporter) getAuthInfo() AuthInfoProvider {
 	return transporter.connSettings.authInfo
 }
 
-func (transporter *httpTransporter) ReadHttp() ([]byte, error) {
+func (transporter *httpTransporter) Read() ([]byte, error) {
 	fmt.Println("Read Http")
 	msg, ok := <-transporter.readChannel
 	if !ok {
 		return []byte{}, errors.New("failed to read from channel")
 	}
 	return msg, nil
-}
-
-// Read used to read data from the transporter. Opens connection if closed.
-func (transporter *httpTransporter) Read() ([]byte, error) {
-	if &transporter.httpConnection == nil {
-		err := transporter.Connect()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	err := transporter.httpConnection.SetReadDeadline(time.Now().Add(transporter.connSettings.keepAliveInterval * 2))
-	if err != nil {
-		return nil, err
-	}
-	_, bytes, err := transporter.httpConnection.ReadMessage()
-	return bytes, err
-
 }
 
 // Close used to close a connection if it is opened.
@@ -322,45 +304,45 @@ func (transporter *httpTransporter) writeLoop() {
 	ticker := time.NewTicker(transporter.connSettings.keepAliveInterval)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case message, ok := <-transporter.writeChannel:
-			if !ok {
-				// Channel was closed, we can disconnect and exit.
-				return
-			}
+	//for {
+	select {
+	case message, ok := <-transporter.writeChannel:
+		if !ok {
+			// Channel was closed, we can disconnect and exit.
+			return
+		}
 
-			// Set write deadline.
-			err := transporter.httpConnection.SetWriteDeadline(time.Now().Add(transporter.connSettings.writeDeadline))
-			if err != nil {
-				transporter.logHandler.logf(Error, failedToSetWriteDeadline, err.Error())
-				return
-			}
+		// Set write deadline.
+		err := transporter.httpConnection.SetWriteDeadline(time.Now().Add(transporter.connSettings.writeDeadline))
+		if err != nil {
+			transporter.logHandler.logf(Error, failedToSetWriteDeadline, err.Error())
+			return
+		}
 
-			// Write binary message that was submitted to channel.
-			fmt.Println("Writing message")
-			//err = transporter.connection.WriteMessage(websocket.BinaryMessage, message)
-			resp, err := transporter.httpConnection.SendMessage(message)
-			if err != nil {
-				transporter.logHandler.logf(Error, failedToWriteMessage, "BinaryMessage", err.Error())
-				return
-			}
-			fmt.Println("Sending response to readChannel")
-			transporter.readChannel <- resp
-		case <-ticker.C:
-			// Set write deadline.
-			err := transporter.httpConnection.SetWriteDeadline(time.Now().Add(transporter.connSettings.keepAliveInterval))
-			if err != nil {
-				transporter.logHandler.logf(Error, failedToSetWriteDeadline, err.Error())
-				return
-			}
+		// Write binary message that was submitted to channel.
+		fmt.Println("Writing message")
+		//err = transporter.connection.WriteMessage(websocket.BinaryMessage, message)
+		resp, err := transporter.httpConnection.SendMessage(message)
+		if err != nil {
+			transporter.logHandler.logf(Error, failedToWriteMessage, "BinaryMessage", err.Error())
+			return
+		}
+		fmt.Println("Sending response to readChannel")
+		transporter.readChannel <- resp
+	case <-ticker.C:
+		// Set write deadline.
+		err := transporter.httpConnection.SetWriteDeadline(time.Now().Add(transporter.connSettings.keepAliveInterval))
+		if err != nil {
+			transporter.logHandler.logf(Error, failedToSetWriteDeadline, err.Error())
+			return
+		}
 
-			// Write pong message.
-			err = transporter.httpConnection.WriteMessage(websocket.PingMessage, nil)
-			if err != nil {
-				transporter.logHandler.logf(Error, failedToWriteMessage, "PingMessage", err.Error())
-				return
-			}
+		// Write pong message.
+		err = transporter.httpConnection.WriteMessage(websocket.PingMessage, nil)
+		if err != nil {
+			transporter.logHandler.logf(Error, failedToWriteMessage, "PingMessage", err.Error())
+			return
 		}
 	}
+	//}
 }
