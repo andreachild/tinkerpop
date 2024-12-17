@@ -90,52 +90,50 @@ func (pool *loadBalancingPool) getLeastUsedConnection() (*connection, error) {
 		return connection, nil
 	}
 
-	return newConnection()
-
 	// If our pool is empty, return a new connection.
-	//if len(pool.connections) == 0 {
-	//	return newConnection()
-	//}
-	//
-	//// Remove connections which are dead and find least used.
-	//var leastUsed *connection = nil
-	//validConnections := make([]*connection, 0, cap(pool.connections))
-	//for _, connection := range pool.connections {
-	//	if connection.state == established || connection.state == initialized {
-	//		validConnections = append(validConnections, connection)
-	//	}
-	//	if connection.state == established {
-	//		// Set the least used connection.
-	//		if leastUsed == nil || connection.activeResults() < leastUsed.activeResults() {
-	//			leastUsed = connection
-	//		}
-	//	}
-	//}
-	//pool.connections = validConnections
-	//
-	//if leastUsed == nil {
-	//	// If no valid connection is found.
-	//	if len(pool.connections) >= cap(pool.connections) {
-	//		// Return error if pool is full and no valid connection was found (should not ever happen).
-	//		return nil, newError(err0105ConnectionPoolFullButNoneValid)
-	//	} else {
-	//		// Return new connection if no valid connection was found and pool has capacity.
-	//		return newConnection()
-	//	}
-	//} else if leastUsed.activeResults() >= pool.newConnectionThreshold && len(pool.connections) < cap(pool.connections) {
-	//	// If the number of active results in our least used connection has reached the threshold
-	//	// AND our pool size has not reached the capacity, attempt to return a new connection.
-	//	newConnection, err := newConnection()
-	//	if err != nil {
-	//		// New connection creation failed; use existing grabbed least-used connection.
-	//		pool.logHandler.logf(Warning, poolNewConnectionError, err.Error())
-	//		return leastUsed, nil
-	//	}
-	//	return newConnection, nil
-	//} else {
-	//	// If our pool is at capacity OR our least busy connection is less than the threshold, return the least used connection.
-	//	return leastUsed, nil
-	//}
+	if len(pool.connections) == 0 {
+		return newConnection()
+	}
+
+	// Remove connections which are dead and find least used.
+	var leastUsed *connection = nil
+	validConnections := make([]*connection, 0, cap(pool.connections))
+	for _, connection := range pool.connections {
+		if connection.state == established || connection.state == initialized {
+			validConnections = append(validConnections, connection)
+		}
+		if connection.state == established {
+			// Set the least used connection.
+			if leastUsed == nil || connection.activeResults() < leastUsed.activeResults() {
+				leastUsed = connection
+			}
+		}
+	}
+	pool.connections = validConnections
+
+	if leastUsed == nil {
+		// If no valid connection is found.
+		if len(pool.connections) >= cap(pool.connections) {
+			// Return error if pool is full and no valid connection was found (should not ever happen).
+			return nil, newError(err0105ConnectionPoolFullButNoneValid)
+		} else {
+			// Return new connection if no valid connection was found and pool has capacity.
+			return newConnection()
+		}
+	} else if leastUsed.activeResults() >= pool.newConnectionThreshold && len(pool.connections) < cap(pool.connections) {
+		// If the number of active results in our least used connection has reached the threshold
+		// AND our pool size has not reached the capacity, attempt to return a new connection.
+		newConnection, err := newConnection()
+		if err != nil {
+			// New connection creation failed; use existing grabbed least-used connection.
+			pool.logHandler.logf(Warning, poolNewConnectionError, err.Error())
+			return leastUsed, nil
+		}
+		return newConnection, nil
+	} else {
+		// If our pool is at capacity OR our least busy connection is less than the threshold, return the least used connection.
+		return leastUsed, nil
+	}
 }
 
 func newLoadBalancingPool(url string, logHandler *logHandler, connSettings *connectionSettings,
