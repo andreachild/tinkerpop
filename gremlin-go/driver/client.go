@@ -159,16 +159,16 @@ func (client *Client) errorCallback() {
 func (client *Client) SubmitWithOptions(traversalString string, requestOptions RequestOptions) (ResultSet, error) {
 	client.logHandler.logf(Debug, submitStartedString, traversalString)
 	request := makeStringRequest(traversalString, client.traversalSource, client.session, requestOptions)
-
-	//result, err := client.connections.write(&request)
-	results := &synchronizedMap{map[string]ResultSet{}, sync.Mutex{}}
-	rs := newChannelResultSet(request.requestID.String(), results)
-	results.store(request.requestID.String(), rs)
-	protocol, err := newHttpProtocol(client.logHandler, client.url, client.connectionSettings, results, client.errorCallback)
+	protocol, err := newHttpProtocol(client.logHandler, client.url, client.connectionSettings)
 	if err != nil {
 		return nil, err
 	}
+	// write and send request
 	err = protocol.write(&request)
+	results := &synchronizedMap{map[string]ResultSet{}, sync.Mutex{}}
+	rs := newChannelResultSet(request.requestID.String(), results)
+	results.store(request.requestID.String(), rs)
+	// read and handle response
 	protocol.readLoop(results, client.errorCallback)
 	return rs, err
 }

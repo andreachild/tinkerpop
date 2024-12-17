@@ -37,13 +37,10 @@ type httpProtocol struct {
 }
 
 func (protocol *httpProtocol) readLoop(resultSets *synchronizedMap, errorCallback func()) {
-	//defer protocol.wg.Done()
-
-	fmt.Println("Http Read loop")
 	msg, err := protocol.transporter.Read()
 
 	// Deserialize message and unpack.
-	fmt.Println("Reading message")
+	fmt.Println("Deserializing response")
 	resp, err := protocol.serializer.deserializeMessage(msg)
 	if err != nil {
 		protocol.logHandler.logf(Error, logErrorGeneric, "httpReadLoop()", err.Error())
@@ -51,18 +48,16 @@ func (protocol *httpProtocol) readLoop(resultSets *synchronizedMap, errorCallbac
 		return
 	}
 
-	fmt.Println("Deserialized message")
+	fmt.Println("Deserialized response")
 	resp.responseID = protocol.request.requestID
 	err = protocol.responseHandler(resultSets, resp)
 	if err != nil {
 		readErrorHandler(resultSets, errorCallback, err, protocol.logHandler)
 		return
 	}
-	fmt.Println("Read done")
 }
 
-func newHttpProtocol(handler *logHandler, url string, connSettings *connectionSettings, results *synchronizedMap,
-	errorCallback func()) (protocol, error) {
+func newHttpProtocol(handler *logHandler, url string, connSettings *connectionSettings) (protocol, error) {
 	wg := &sync.WaitGroup{}
 	transport, err := getTransportLayer(Http, url, connSettings, handler)
 	if err != nil {
@@ -77,16 +72,11 @@ func newHttpProtocol(handler *logHandler, url string, connSettings *connectionSe
 		mutex:        sync.Mutex{},
 		wg:           wg,
 	}
-	err = gremlinProtocol.transporter.Connect()
-	if err != nil {
-		return nil, err
-	}
-	//wg.Add(1)
-	go gremlinProtocol.readLoop(results, errorCallback)
 	return gremlinProtocol, nil
 }
 
 func (protocol *httpProtocol) responseHandler(resultSets *synchronizedMap, response response) error {
+	fmt.Println("Handling response")
 	responseID, statusCode, metadata, data := response.responseID, response.responseStatus.code,
 		response.responseResult.meta, response.responseResult.data
 	responseIDString := responseID.String()
@@ -142,26 +132,15 @@ func (protocol *httpProtocol) responseHandler(resultSets *synchronizedMap, respo
 
 func (protocol *httpProtocol) write(request *request) error {
 	protocol.request = request
+	fmt.Println("Serializing request")
 	bytes, err := protocol.serializer.serializeMessage(request)
 	if err != nil {
 		return err
 	}
 	return protocol.transporter.Write(bytes)
+
 }
 
 func (protocol *httpProtocol) close(wait bool) error {
-	var err error
-
-	protocol.mutex.Lock()
-	if !protocol.closed {
-		err = protocol.transporter.Close()
-		protocol.closed = true
-	}
-	protocol.mutex.Unlock()
-
-	if wait {
-		protocol.wg.Wait()
-	}
-
-	return err
+	return nil
 }
