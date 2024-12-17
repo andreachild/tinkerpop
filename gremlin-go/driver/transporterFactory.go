@@ -29,7 +29,7 @@ type TransporterType int
 const (
 	// Gorilla transport layer: github.com/gorilla/websocket
 	Gorilla TransporterType = iota + 1
-	Http TransporterType = iota + 1
+	Http    TransporterType = iota + 1
 )
 
 func getTransportLayer(transporterType TransporterType, url string, connSettings *connectionSettings, logHandler *logHandler) (transporter, error) {
@@ -45,12 +45,9 @@ func getTransportLayer(transporterType TransporterType, url string, connSettings
 		}
 	case Http:
 		transporter = &httpTransporter{
-			url:          url,
-			logHandler:   logHandler,
-			connSettings: connSettings,
-			writeChannel: make(chan []byte, writeChannelSizeDefault),
-			readChannel:  make(chan []byte, writeChannelSizeDefault),
-			wg:           &sync.WaitGroup{},
+			url:             url,
+			connSettings:    connSettings,
+			responseChannel: make(chan []byte, writeChannelSizeDefault),
 		}
 	default:
 		return nil, newError(err0801GetTransportLayerNoTypeError)

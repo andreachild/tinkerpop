@@ -23,7 +23,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
-	"sync"
 )
 
 type httpProtocol struct {
@@ -32,10 +31,9 @@ type httpProtocol struct {
 	serializer serializer
 	logHandler *logHandler
 	closed     bool
-	mutex      sync.Mutex
-	wg         *sync.WaitGroup
 }
 
+// function name is readLoop but is not actually a loop - just keeping the name due to the protocol interface for now
 func (protocol *httpProtocol) readLoop(resultSets *synchronizedMap, errorCallback func()) {
 	msg, err := protocol.transporter.Read()
 
@@ -49,6 +47,8 @@ func (protocol *httpProtocol) readLoop(resultSets *synchronizedMap, errorCallbac
 	}
 
 	fmt.Println("Deserialized response")
+	// TODO we should not need to use response/request ids to correlate responses with requests anymore after moving from ws to http
+	// but for simplicity of http POC we are just setting the responseId to the requestId here
 	resp.responseID = protocol.request.requestID
 	err = protocol.responseHandler(resultSets, resp)
 	if err != nil {
@@ -58,7 +58,6 @@ func (protocol *httpProtocol) readLoop(resultSets *synchronizedMap, errorCallbac
 }
 
 func newHttpProtocol(handler *logHandler, url string, connSettings *connectionSettings) (protocol, error) {
-	wg := &sync.WaitGroup{}
 	transport, err := getTransportLayer(Http, url, connSettings, handler)
 	if err != nil {
 		return nil, err
@@ -69,14 +68,15 @@ func newHttpProtocol(handler *logHandler, url string, connSettings *connectionSe
 		serializer:   newGraphBinarySerializer(handler),
 		logHandler:   handler,
 		closed:       false,
-		mutex:        sync.Mutex{},
-		wg:           wg,
 	}
 	return gremlinProtocol, nil
 }
 
 func (protocol *httpProtocol) responseHandler(resultSets *synchronizedMap, response response) error {
 	fmt.Println("Handling response")
+
+	// TOPO http specific response handling - below is just copy-pasted from web socket implementation for now
+
 	responseID, statusCode, metadata, data := response.responseID, response.responseStatus.code,
 		response.responseResult.meta, response.responseResult.data
 	responseIDString := responseID.String()
@@ -125,13 +125,14 @@ func (protocol *httpProtocol) responseHandler(resultSets *synchronizedMap, respo
 		newError := newError(err0502ResponseHandlerReadLoopError, response.responseStatus, statusCode)
 		resultSets.load(responseIDString).setError(newError)
 		resultSets.load(responseIDString).Close()
-		protocol.logHandler.logf(Error, logErrorGeneric, "gremlinServerWSProtocol.responseHandler()", newError.Error())
+		protocol.logHandler.logf(Error, logErrorGeneric, "httpProtocol.responseHandler()", newError.Error())
 	}
 	return nil
 }
 
 func (protocol *httpProtocol) write(request *request) error {
 	protocol.request = request
+	// TODO interceptors
 	fmt.Println("Serializing request")
 	bytes, err := protocol.serializer.serializeMessage(request)
 	if err != nil {
