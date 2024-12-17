@@ -25,7 +25,6 @@ type transporter interface {
 	Connect() error
 	Write(data []byte) error
 	Read() ([]byte, error)
-	ReadHttp() ([]byte, error)
 	Close() error
 	IsClosed() bool
 	getAuthInfo() AuthInfoProvider

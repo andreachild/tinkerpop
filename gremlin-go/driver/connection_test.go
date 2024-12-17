@@ -606,6 +606,14 @@ func TestConnection(t *testing.T) {
 		assert.Nil(t, err)
 		assert.True(t, ok)
 		assert.NotNil(t, result)
+
+		resultSet2, err := client.Submit("g.V().count()")
+		assert.Nil(t, err)
+		assert.NotNil(t, resultSet2)
+		result, ok, err = resultSet2.One()
+		assert.Nil(t, err)
+		assert.True(t, ok)
+		assert.NotNil(t, result)
 		//
 		//g := cloneGraphTraversalSource(&Graph{}, NewBytecode(nil), nil)
 		//b := g.V().Count().Bytecode
