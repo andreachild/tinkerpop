@@ -55,9 +55,9 @@ func getTransportLayer(transporterType TransporterType, url string, connSettings
 	default:
 		return nil, newError(err0801GetTransportLayerNoTypeError)
 	}
-	err := transporter.Connect()
-	if err != nil {
-		return nil, err
-	}
+	//err := transporter.Connect()
+	//if err != nil {
+	//	return nil, err
+	//}
 	return transporter, nil
 }
