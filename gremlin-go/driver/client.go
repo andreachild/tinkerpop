@@ -170,6 +170,7 @@ func (client *Client) SubmitWithOptions(traversalString string, requestOptions R
 	results.store(request.requestID.String(), rs)
 	// read and handle response
 	protocol.readLoop(results, client.errorCallback)
+	// return the ResultSet from which the caller can obtain result(s)
 	return rs, err
 }
 

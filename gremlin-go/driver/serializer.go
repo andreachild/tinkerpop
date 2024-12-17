@@ -151,6 +151,7 @@ func (gs graphBinarySerializer) deserializeMessage(message []byte) (response, er
 	return msg, nil
 }
 
+// TODO fix serialization logic for 4.0
 func initSerializers() {
 	serializers = map[dataType]writer{
 		stringType:     stringWriter,
@@ -196,6 +197,7 @@ func initSerializers() {
 	}
 }
 
+// TODO fix deserialization logic for 4.0
 func initDeserializers() {
 	deserializers = map[dataType]reader{
 		// Primitive
