@@ -30,14 +30,14 @@ type httpProtocol struct {
 
 	serializer serializer
 	logHandler *logHandler
-	closed     bool
 }
 
+// waits for response, deserializes and processes results
 // function name is readLoop but is not actually a loop - just keeping the name due to the protocol interface for now
 func (protocol *httpProtocol) readLoop(resultSets *synchronizedMap, errorCallback func()) {
 	msg, err := protocol.transporter.Read()
 
-	// Deserialize message and unpack.
+	// Deserialize response message
 	fmt.Println("Deserializing response")
 	resp, err := protocol.serializer.deserializeMessage(msg)
 	if err != nil {
@@ -67,11 +67,11 @@ func newHttpProtocol(handler *logHandler, url string, connSettings *connectionSe
 		protocolBase: &protocolBase{transporter: transport},
 		serializer:   newGraphBinarySerializer(handler),
 		logHandler:   handler,
-		closed:       false,
 	}
 	return gremlinProtocol, nil
 }
 
+// loads results into the response set from the response
 func (protocol *httpProtocol) responseHandler(resultSets *synchronizedMap, response response) error {
 	fmt.Println("Handling response")
 
@@ -130,6 +130,7 @@ func (protocol *httpProtocol) responseHandler(resultSets *synchronizedMap, respo
 	return nil
 }
 
+// serializes and sends the request
 func (protocol *httpProtocol) write(request *request) error {
 	protocol.request = request
 	// TODO interceptors

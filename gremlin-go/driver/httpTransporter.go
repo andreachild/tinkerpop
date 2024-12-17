@@ -45,7 +45,7 @@ func (transporter *httpTransporter) Connect() (err error) {
 
 func (transporter *httpTransporter) Write(data []byte) error {
 	fmt.Println("Sending request message")
-	u, _ := url.Parse("http://localhost:8182/gremlin")
+	u, _ := url.Parse(transporter.url)
 	body := io.NopCloser(bytes.NewReader(data))
 
 	// TODO apply connection settings
