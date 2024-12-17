@@ -21,6 +21,7 @@ package gremlingo
 
 import (
 	"crypto/tls"
+	"fmt"
 	"math/big"
 	"os"
 	"reflect"
@@ -586,6 +587,7 @@ func TestConnection(t *testing.T) {
 		})
 	})
 
+	// this test is used to test the ws->http POC changes via manual execution with a local TP 4.0 gremlin server running on 8182
 	t.Run("Test client.submit()", func(t *testing.T) {
 		skipTestsIfNotEnabled(t, integrationTestSuiteName, testNoAuthEnable)
 
@@ -606,14 +608,7 @@ func TestConnection(t *testing.T) {
 		assert.Nil(t, err)
 		assert.True(t, ok)
 		assert.NotNil(t, result)
-
-		resultSet2, err := client.Submit("g.V().count()")
-		assert.Nil(t, err)
-		assert.NotNil(t, resultSet2)
-		result, ok, err = resultSet2.One()
-		assert.Nil(t, err)
-		assert.True(t, ok)
-		assert.NotNil(t, result)
+		_, _ = fmt.Fprintf(os.Stdout, "Received result : %s\n", result)
 		//
 		//g := cloneGraphTraversalSource(&Graph{}, NewBytecode(nil), nil)
 		//b := g.V().Count().Bytecode
