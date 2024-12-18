@@ -70,7 +70,7 @@ type Client struct {
 func NewClient(url string, configurations ...func(settings *ClientSettings)) (*Client, error) {
 	settings := &ClientSettings{
 		TraversalSource:          "g",
-		TransporterType:          Gorilla,
+		TransporterType:          Http,
 		LogVerbosity:             Info,
 		Logger:                   &defaultLogger{},
 		Language:                 language.English,

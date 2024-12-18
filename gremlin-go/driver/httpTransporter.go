@@ -48,7 +48,6 @@ func (transporter *httpTransporter) Write(data []byte) error {
 	u, _ := url.Parse(transporter.url)
 	body := io.NopCloser(bytes.NewReader(data))
 
-	// TODO apply connection settings
 	req := http.Request{
 		Method: "POST",
 		URL:    u,
@@ -58,14 +57,28 @@ func (transporter *httpTransporter) Write(data []byte) error {
 			"accept":       {"application/vnd.graphbinary-v4.0"},
 			// TODO handle response compression
 			//"accept-encoding": {"deflate"},
+			// TODO set user agent header
+			//"user-agent" : ""
 		},
 		Body:          body,
 		ContentLength: int64(len(data)),
-		//TLS:           nil,
+		// TODO handle chunked encoding
 		//TransferEncoding: nil,
 	}
 
-	resp, err := http.DefaultClient.Do(&req)
+	transport := &http.Transport{
+		TLSClientConfig: transporter.connSettings.tlsConfig,
+		MaxConnsPerHost: 0, // TODO
+		IdleConnTimeout: 0, // TODO
+	}
+
+	// TODO do not create new client for each request
+	client := &http.Client{
+		Transport: transport,
+		Timeout:   transporter.connSettings.connectionTimeout,
+	}
+
+	resp, err := client.Do(&req)
 	if err != nil {
 		return err
 	}
