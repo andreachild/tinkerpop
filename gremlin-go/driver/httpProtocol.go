@@ -75,7 +75,7 @@ func newHttpProtocol(handler *logHandler, url string, connSettings *connectionSe
 func (protocol *httpProtocol) responseHandler(resultSets *synchronizedMap, response response) error {
 	fmt.Println("Handling response")
 
-	// TOPO http specific response handling - below is just copy-pasted from web socket implementation for now
+	// TODO http specific response handling - below is just copy-pasted from web socket implementation for now
 
 	responseID, statusCode, metadata, data := response.responseID, response.responseStatus.code,
 		response.responseResult.meta, response.responseResult.data
