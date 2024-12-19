@@ -44,11 +44,7 @@ func getTransportLayer(transporterType TransporterType, url string, connSettings
 			wg:           &sync.WaitGroup{},
 		}
 	case Http:
-		transporter = &httpTransporter{
-			url:             url,
-			connSettings:    connSettings,
-			responseChannel: make(chan []byte, writeChannelSizeDefault),
-		}
+		transporter = NewHttpTransporter(url, connSettings)
 	default:
 		return nil, newError(err0801GetTransportLayerNoTypeError)
 	}
