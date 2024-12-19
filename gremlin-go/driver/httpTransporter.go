@@ -26,71 +26,80 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 )
 
-type httpTransporter struct {
+type HttpTransporter struct {
 	url             string
 	isClosed        bool
 	connSettings    *connectionSettings
 	responseChannel chan []byte
+	client          http.Client
 }
 
-func (transporter *httpTransporter) Connect() (err error) {
+func NewHttpTransporter(url string, connSettings *connectionSettings) *HttpTransporter {
+	transport := &http.Transport{
+		TLSClientConfig:    connSettings.tlsConfig,
+		MaxConnsPerHost:    0, // TODO
+		IdleConnTimeout:    0, // TODO
+		DisableCompression: !connSettings.enableCompression,
+	}
+
+	c := http.Client{
+		Transport: transport,
+		Timeout:   connSettings.connectionTimeout,
+	}
+
+	return &HttpTransporter{
+		url:             url,
+		connSettings:    connSettings,
+		responseChannel: make(chan []byte, writeChannelSizeDefault),
+		client:          c,
+	}
+}
+
+func (transporter *HttpTransporter) Connect() (err error) {
 	// http transporter delegates connection management to the http client
 	// TODO verify that connections are being reused and cleaned up when appropriate
 	return
 }
 
-func (transporter *httpTransporter) Write(data []byte) error {
+func (transporter *HttpTransporter) Write(data []byte) error {
 	fmt.Println("Sending request message")
-	u, _ := url.Parse(transporter.url)
-	body := io.NopCloser(bytes.NewReader(data))
+	u, err := url.Parse(transporter.url)
+	if err != nil {
+		return err
+	}
+	host, _, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		return err
+	}
 
 	header := http.Header{
 		"content-type": {graphBinaryMimeType},
-		"host":         {"localhost"},
+		"host":         {host},
 		"accept":       {graphBinaryMimeType},
-		// TODO handle response compression
-		//"accept-encoding": {"deflate"},
-		// TODO set user agent header
-		//"user-agent" : ""
 	}
-
 	if transporter.connSettings.enableUserAgentOnConnect {
 		header.Set(userAgentHeader, userAgent)
 	}
-
 	if transporter.connSettings.enableCompression {
 		header.Set("accept-encoding", "deflate")
 	}
 
+	body := io.NopCloser(bytes.NewReader(data))
 	req := http.Request{
 		Method:        "POST",
 		URL:           u,
 		Header:        header,
 		Body:          body,
 		ContentLength: int64(len(data)),
-		// TODO handle chunked encoding
-		//TransferEncoding: nil,
 	}
 
-	transport := &http.Transport{
-		TLSClientConfig:    transporter.connSettings.tlsConfig,
-		MaxConnsPerHost:    0, // TODO
-		IdleConnTimeout:    0, // TODO
-		DisableCompression: !transporter.connSettings.enableCompression,
-	}
-
-	// TODO do not create new client for each request
-	client := &http.Client{
-		Transport: transport,
-		Timeout:   transporter.connSettings.connectionTimeout,
-	}
-
-	resp, err := client.Do(&req)
+	resp, err := transporter.client.Do(&req)
 	if err != nil {
 		return err
 	}
@@ -102,6 +111,8 @@ func (transporter *httpTransporter) Write(data []byte) error {
 			return err
 		}
 	}
+
+	// TODO handle chunked encoding
 
 	all, err := io.ReadAll(reader)
 	if err != nil {
@@ -116,14 +127,14 @@ func (transporter *httpTransporter) Write(data []byte) error {
 	return nil
 }
 
-func (transporter *httpTransporter) getAuthInfo() AuthInfoProvider {
+func (transporter *HttpTransporter) getAuthInfo() AuthInfoProvider {
 	if transporter.connSettings.authInfo == nil {
 		return NoopAuthInfo
 	}
 	return transporter.connSettings.authInfo
 }
 
-func (transporter *httpTransporter) Read() ([]byte, error) {
+func (transporter *HttpTransporter) Read() ([]byte, error) {
 	fmt.Println("Reading from responseChannel")
 	msg, ok := <-transporter.responseChannel
 	if !ok {
@@ -132,7 +143,7 @@ func (transporter *httpTransporter) Read() ([]byte, error) {
 	return msg, nil
 }
 
-func (transporter *httpTransporter) Close() (err error) {
+func (transporter *HttpTransporter) Close() (err error) {
 	fmt.Println("Closing http transporter")
 	if !transporter.isClosed {
 		if transporter.responseChannel != nil {
@@ -143,6 +154,6 @@ func (transporter *httpTransporter) Close() (err error) {
 	return
 }
 
-func (transporter *httpTransporter) IsClosed() bool {
+func (transporter *HttpTransporter) IsClosed() bool {
 	return transporter.isClosed
 }
