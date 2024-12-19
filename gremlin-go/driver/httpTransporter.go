@@ -21,6 +21,7 @@ package gremlingo
 
 import (
 	"bytes"
+	"compress/zlib"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -48,18 +49,28 @@ func (transporter *httpTransporter) Write(data []byte) error {
 	u, _ := url.Parse(transporter.url)
 	body := io.NopCloser(bytes.NewReader(data))
 
+	header := http.Header{
+		"content-type": {graphBinaryMimeType},
+		"host":         {"localhost"},
+		"accept":       {graphBinaryMimeType},
+		// TODO handle response compression
+		//"accept-encoding": {"deflate"},
+		// TODO set user agent header
+		//"user-agent" : ""
+	}
+
+	if transporter.connSettings.enableUserAgentOnConnect {
+		header.Set(userAgentHeader, userAgent)
+	}
+
+	if transporter.connSettings.enableCompression {
+		header.Set("accept-encoding", "deflate")
+	}
+
 	req := http.Request{
-		Method: "POST",
-		URL:    u,
-		Header: map[string][]string{
-			"content-type": {"application/vnd.graphbinary-v4.0"},
-			"host":         {"localhost"},
-			"accept":       {"application/vnd.graphbinary-v4.0"},
-			// TODO handle response compression
-			//"accept-encoding": {"deflate"},
-			// TODO set user agent header
-			//"user-agent" : ""
-		},
+		Method:        "POST",
+		URL:           u,
+		Header:        header,
 		Body:          body,
 		ContentLength: int64(len(data)),
 		// TODO handle chunked encoding
@@ -67,9 +78,10 @@ func (transporter *httpTransporter) Write(data []byte) error {
 	}
 
 	transport := &http.Transport{
-		TLSClientConfig: transporter.connSettings.tlsConfig,
-		MaxConnsPerHost: 0, // TODO
-		IdleConnTimeout: 0, // TODO
+		TLSClientConfig:    transporter.connSettings.tlsConfig,
+		MaxConnsPerHost:    0, // TODO
+		IdleConnTimeout:    0, // TODO
+		DisableCompression: !transporter.connSettings.enableCompression,
 	}
 
 	// TODO do not create new client for each request
@@ -83,8 +95,15 @@ func (transporter *httpTransporter) Write(data []byte) error {
 		return err
 	}
 
-	// TODO handle response chunks
-	all, err := io.ReadAll(resp.Body)
+	reader := resp.Body
+	if resp.Header.Get("content-encoding") == "deflate" {
+		reader, err = zlib.NewReader(resp.Body)
+		if err != nil {
+			return err
+		}
+	}
+
+	all, err := io.ReadAll(reader)
 	if err != nil {
 		return err
 	}
