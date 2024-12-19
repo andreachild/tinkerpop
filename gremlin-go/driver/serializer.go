@@ -30,7 +30,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const graphBinaryMimeType = "application/vnd.graphbinary-v1.0"
+const graphBinaryMimeType = "application/vnd.graphbinary-v4.0"
 
 // serializer interface for serializers.
 type serializer interface {
