@@ -22,6 +22,7 @@ package gremlingo
 import (
 	"crypto/tls"
 	"runtime"
+	"sync"
 	"time"
 
 	"golang.org/x/text/language"
@@ -54,12 +55,13 @@ type ClientSettings struct {
 
 // Client is used to connect and interact with a Gremlin-supported server.
 type Client struct {
-	url             string
-	traversalSource string
-	logHandler      *logHandler
-	transporterType TransporterType
-	connections     connectionPool
-	session         string
+	url                string
+	traversalSource    string
+	logHandler         *logHandler
+	transporterType    TransporterType
+	connections        connectionPool
+	session            string
+	connectionSettings *connectionSettings
 }
 
 // NewClient creates a Client and configures it with the given parameters. During creation of the Client, a connection
@@ -68,7 +70,7 @@ type Client struct {
 func NewClient(url string, configurations ...func(settings *ClientSettings)) (*Client, error) {
 	settings := &ClientSettings{
 		TraversalSource:          "g",
-		TransporterType:          Gorilla,
+		TransporterType:          Http,
 		LogVerbosity:             Info,
 		Logger:                   &defaultLogger{},
 		Language:                 language.English,
@@ -122,12 +124,13 @@ func NewClient(url string, configurations ...func(settings *ClientSettings)) (*C
 	}
 
 	client := &Client{
-		url:             url,
-		traversalSource: settings.TraversalSource,
-		logHandler:      logHandler,
-		transporterType: settings.TransporterType,
-		connections:     pool,
-		session:         "",
+		url:                url,
+		traversalSource:    settings.TraversalSource,
+		logHandler:         logHandler,
+		transporterType:    settings.TransporterType,
+		connections:        pool,
+		session:            "",
+		connectionSettings: connSettings,
 	}
 
 	return client, nil
@@ -148,15 +151,30 @@ func (client *Client) Close() {
 	client.connections.close()
 }
 
+func (client *Client) errorCallback() {
+	client.logHandler.log(Error, errorCallback)
+}
+
 // SubmitWithOptions submits a Gremlin script to the server with specified RequestOptions and returns a ResultSet.
 func (client *Client) SubmitWithOptions(traversalString string, requestOptions RequestOptions) (ResultSet, error) {
 	client.logHandler.logf(Debug, submitStartedString, traversalString)
 	request := makeStringRequest(traversalString, client.traversalSource, client.session, requestOptions)
-	result, err := client.connections.write(&request)
+	protocol, err := newHttpProtocol(client.logHandler, client.url, client.connectionSettings)
 	if err != nil {
-		client.logHandler.logf(Error, logErrorGeneric, "Client.Submit()", err.Error())
+		return nil, err
 	}
-	return result, err
+	// write and send request
+	err = protocol.write(&request)
+	if err != nil {
+		return nil, err
+	}
+	results := &synchronizedMap{map[string]ResultSet{}, sync.Mutex{}}
+	rs := newChannelResultSet(request.requestID.String(), results)
+	results.store(request.requestID.String(), rs)
+	// read and handle response
+	protocol.readLoop(results, client.errorCallback)
+	// return the ResultSet from which the caller can obtain result(s)
+	return rs, err
 }
 
 // Submit submits a Gremlin script to the server and returns a ResultSet. Submit can optionally accept a map of bindings

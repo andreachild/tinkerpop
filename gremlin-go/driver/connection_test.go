@@ -21,6 +21,7 @@ package gremlingo
 
 import (
 	"crypto/tls"
+	"fmt"
 	"math/big"
 	"os"
 	"reflect"
@@ -50,7 +51,8 @@ const manualTestSuiteName = "manual"
 const nonRoutableIPForConnectionTimeout = "ws://10.255.255.1/"
 
 // transaction is enabled on the same port as no auth url
-const noAuthUrl = "ws://localhost:45940/gremlin"
+const noAuthUrl = "http://localhost:8182/gremlin"
+const noAuthSslUrl = "https://localhost:8182/gremlin"
 const basicAuthWithSsl = "wss://localhost:45941/gremlin"
 
 var testNames = []string{"Lyndon", "Yang", "Simon", "Rithin", "Alexey", "Valentyn"}
@@ -586,13 +588,21 @@ func TestConnection(t *testing.T) {
 		})
 	})
 
+	// this test is used to test the ws->http POC changes via manual execution with a local TP 4.0 gremlin server running on 8182
 	t.Run("Test client.submit()", func(t *testing.T) {
 		skipTestsIfNotEnabled(t, integrationTestSuiteName, testNoAuthEnable)
 
-		client, err := NewClient(testNoAuthUrl,
+		tlsConf := tls.Config{
+			InsecureSkipVerify: true,
+		}
+
+		//client, err := NewClient(testNoAuthUrl,
+		client, err := NewClient(noAuthSslUrl,
 			func(settings *ClientSettings) {
-				settings.TlsConfig = testNoAuthTlsConfig
+				settings.TlsConfig = &tlsConf
 				settings.AuthInfo = testNoAuthAuthInfo
+				settings.WriteBufferSize = 1024
+				settings.EnableCompression = true
 			})
 		assert.Nil(t, err)
 		assert.NotNil(t, client)
@@ -605,16 +615,17 @@ func TestConnection(t *testing.T) {
 		assert.Nil(t, err)
 		assert.True(t, ok)
 		assert.NotNil(t, result)
-
-		g := cloneGraphTraversalSource(&Graph{}, NewBytecode(nil), nil)
-		b := g.V().Count().Bytecode
-		resultSet, err = client.submitBytecode(b)
-		assert.Nil(t, err)
-		assert.NotNil(t, resultSet)
-		result, ok, err = resultSet.One()
-		assert.Nil(t, err)
-		assert.True(t, ok)
-		assert.NotNil(t, result)
+		_, _ = fmt.Fprintf(os.Stdout, "Received result : %s\n", result)
+		//
+		//g := cloneGraphTraversalSource(&Graph{}, NewBytecode(nil), nil)
+		//b := g.V().Count().Bytecode
+		//resultSet, err = client.submitBytecode(b)
+		//assert.Nil(t, err)
+		//assert.NotNil(t, resultSet)
+		//result, ok, err = resultSet.One()
+		//assert.Nil(t, err)
+		//assert.True(t, ok)
+		//assert.NotNil(t, result)
 	})
 
 	t.Run("Test client.submit() on session", func(t *testing.T) {

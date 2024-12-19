@@ -21,80 +21,62 @@ package gremlingo
 
 import (
 	"encoding/base64"
+	"fmt"
 	"net/http"
-	"sync"
 )
 
-// protocol handles invoking serialization and deserialization, as well as handling the lifecycle of raw data passed to
-// and received from the transport layer.
-type protocol interface {
-	readLoop(resultSets *synchronizedMap, errorCallback func())
-	write(request *request) error
-	close(wait bool) error
-}
-
-const authenticationFailed = uint16(151)
-
-type protocolBase struct {
-	protocol
-	request     *request
-	transporter transporter
-}
-
-type gremlinServerWSProtocol struct {
+type httpProtocol struct {
 	*protocolBase
 
 	serializer serializer
 	logHandler *logHandler
-	closed     bool
-	mutex      sync.Mutex
-	wg         *sync.WaitGroup
 }
 
-func (protocol *gremlinServerWSProtocol) readLoop(resultSets *synchronizedMap, errorCallback func()) {
-	defer protocol.wg.Done()
+// waits for response, deserializes and processes results
+// function name is readLoop but is not actually a loop - just keeping the name due to the protocol interface for now
+func (protocol *httpProtocol) readLoop(resultSets *synchronizedMap, errorCallback func()) {
+	msg, err := protocol.transporter.Read()
 
-	for {
-		// Read from transport layer. If the channel is closed, this will error out and exit.
-		msg, err := protocol.transporter.Read()
-		protocol.mutex.Lock()
-		if protocol.closed {
-			protocol.mutex.Unlock()
-			return
-		}
-		protocol.mutex.Unlock()
-		if err != nil {
-			// Ignore error here, we already got an error on read, cannot do anything with this.
-			_ = protocol.transporter.Close()
-			protocol.logHandler.logf(Error, readLoopError, err.Error())
-			readErrorHandler(resultSets, errorCallback, err, protocol.logHandler)
-			return
-		}
+	// Deserialize response message
+	fmt.Println("Deserializing response")
+	resp, err := protocol.serializer.deserializeMessage(msg)
+	if err != nil {
+		protocol.logHandler.logf(Error, logErrorGeneric, "httpReadLoop()", err.Error())
+		readErrorHandler(resultSets, errorCallback, err, protocol.logHandler)
+		return
+	}
 
-		// Deserialize message and unpack.
-		resp, err := protocol.serializer.deserializeMessage(msg)
-		if err != nil {
-			protocol.logHandler.logf(Error, logErrorGeneric, "gremlinServerWSProtocol.readLoop()", err.Error())
-			readErrorHandler(resultSets, errorCallback, err, protocol.logHandler)
-			return
-		}
-
-		err = protocol.responseHandler(resultSets, resp)
-		if err != nil {
-			readErrorHandler(resultSets, errorCallback, err, protocol.logHandler)
-			return
-		}
+	fmt.Println("Deserialized response")
+	// TODO we should not need to use response/request ids to correlate responses with requests anymore after moving from ws to http
+	// but for simplicity of http POC we are just setting the responseId to the requestId here
+	resp.responseID = protocol.request.requestID
+	err = protocol.responseHandler(resultSets, resp)
+	if err != nil {
+		readErrorHandler(resultSets, errorCallback, err, protocol.logHandler)
+		return
 	}
 }
 
-// If there is an error, we need to close the ResultSets and then pass the error back.
-func readErrorHandler(resultSets *synchronizedMap, errorCallback func(), err error, log *logHandler) {
-	log.logf(Error, readLoopError, err.Error())
-	resultSets.closeAll(err)
-	errorCallback()
+func newHttpProtocol(handler *logHandler, url string, connSettings *connectionSettings) (protocol, error) {
+	transport, err := getTransportLayer(Http, url, connSettings, handler)
+	if err != nil {
+		return nil, err
+	}
+
+	gremlinProtocol := &httpProtocol{
+		protocolBase: &protocolBase{transporter: transport},
+		serializer:   newGraphBinarySerializer(handler),
+		logHandler:   handler,
+	}
+	return gremlinProtocol, nil
 }
 
-func (protocol *gremlinServerWSProtocol) responseHandler(resultSets *synchronizedMap, response response) error {
+// loads results into the response set from the response
+func (protocol *httpProtocol) responseHandler(resultSets *synchronizedMap, response response) error {
+	fmt.Println("Handling response")
+
+	// TODO http specific response handling - below is just copy-pasted from web socket implementation for now
+
 	responseID, statusCode, metadata, data := response.responseID, response.responseStatus.code,
 		response.responseResult.meta, response.responseResult.data
 	responseIDString := responseID.String()
@@ -143,57 +125,24 @@ func (protocol *gremlinServerWSProtocol) responseHandler(resultSets *synchronize
 		newError := newError(err0502ResponseHandlerReadLoopError, response.responseStatus, statusCode)
 		resultSets.load(responseIDString).setError(newError)
 		resultSets.load(responseIDString).Close()
-		protocol.logHandler.logf(Error, logErrorGeneric, "gremlinServerWSProtocol.responseHandler()", newError.Error())
+		protocol.logHandler.logf(Error, logErrorGeneric, "httpProtocol.responseHandler()", newError.Error())
 	}
 	return nil
 }
 
-func (protocol *gremlinServerWSProtocol) write(request *request) error {
+// serializes and sends the request
+func (protocol *httpProtocol) write(request *request) error {
+	protocol.request = request
+	// TODO interceptors
+	fmt.Println("Serializing request")
 	bytes, err := protocol.serializer.serializeMessage(request)
 	if err != nil {
 		return err
 	}
 	return protocol.transporter.Write(bytes)
+
 }
 
-func (protocol *gremlinServerWSProtocol) close(wait bool) error {
-	var err error
-
-	protocol.mutex.Lock()
-	if !protocol.closed {
-		err = protocol.transporter.Close()
-		protocol.closed = true
-	}
-	protocol.mutex.Unlock()
-
-	if wait {
-		protocol.wg.Wait()
-	}
-
-	return err
-}
-
-func newGremlinServerWSProtocol(handler *logHandler, transporterType TransporterType, url string, connSettings *connectionSettings, results *synchronizedMap,
-	errorCallback func()) (protocol, error) {
-	wg := &sync.WaitGroup{}
-	transport, err := getTransportLayer(transporterType, url, connSettings, handler)
-	if err != nil {
-		return nil, err
-	}
-
-	gremlinProtocol := &gremlinServerWSProtocol{
-		protocolBase: &protocolBase{transporter: transport},
-		serializer:   newGraphBinarySerializer(handler),
-		logHandler:   handler,
-		closed:       false,
-		mutex:        sync.Mutex{},
-		wg:           wg,
-	}
-	err = gremlinProtocol.transporter.Connect()
-	if err != nil {
-		return nil, err
-	}
-	wg.Add(1)
-	go gremlinProtocol.readLoop(results, errorCallback)
-	return gremlinProtocol, nil
+func (protocol *httpProtocol) close(wait bool) error {
+	return nil
 }
