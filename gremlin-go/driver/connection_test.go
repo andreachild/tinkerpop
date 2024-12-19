@@ -52,6 +52,7 @@ const nonRoutableIPForConnectionTimeout = "ws://10.255.255.1/"
 
 // transaction is enabled on the same port as no auth url
 const noAuthUrl = "http://localhost:8182/gremlin"
+const noAuthSslUrl = "https://localhost:8182/gremlin"
 const basicAuthWithSsl = "wss://localhost:45941/gremlin"
 
 var testNames = []string{"Lyndon", "Yang", "Simon", "Rithin", "Alexey", "Valentyn"}
@@ -591,9 +592,14 @@ func TestConnection(t *testing.T) {
 	t.Run("Test client.submit()", func(t *testing.T) {
 		skipTestsIfNotEnabled(t, integrationTestSuiteName, testNoAuthEnable)
 
-		client, err := NewClient(testNoAuthUrl,
+		tlsConf := tls.Config{
+			InsecureSkipVerify: true,
+		}
+
+		//client, err := NewClient(testNoAuthUrl,
+		client, err := NewClient(noAuthSslUrl,
 			func(settings *ClientSettings) {
-				settings.TlsConfig = testNoAuthTlsConfig
+				settings.TlsConfig = &tlsConf
 				settings.AuthInfo = testNoAuthAuthInfo
 				settings.WriteBufferSize = 1024
 				settings.EnableCompression = true
