@@ -165,6 +165,9 @@ func (client *Client) SubmitWithOptions(traversalString string, requestOptions R
 	}
 	// write and send request
 	err = protocol.write(&request)
+	if err != nil {
+		return nil, err
+	}
 	results := &synchronizedMap{map[string]ResultSet{}, sync.Mutex{}}
 	rs := newChannelResultSet(request.requestID.String(), results)
 	results.store(request.requestID.String(), rs)

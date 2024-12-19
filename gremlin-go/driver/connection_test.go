@@ -596,6 +596,7 @@ func TestConnection(t *testing.T) {
 				settings.TlsConfig = testNoAuthTlsConfig
 				settings.AuthInfo = testNoAuthAuthInfo
 				settings.WriteBufferSize = 1024
+				settings.EnableCompression = true
 			})
 		assert.Nil(t, err)
 		assert.NotNil(t, client)
