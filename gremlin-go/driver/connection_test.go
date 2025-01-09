@@ -616,6 +616,16 @@ func TestConnection(t *testing.T) {
 		assert.True(t, ok)
 		assert.NotNil(t, result)
 		_, _ = fmt.Fprintf(os.Stdout, "Received result : %s\n", result)
+
+		// submit 2nd request
+		resultSet, err = client.Submit("g.V().count()")
+		assert.Nil(t, err)
+		assert.NotNil(t, resultSet)
+		result, ok, err = resultSet.One()
+		assert.Nil(t, err)
+		assert.True(t, ok)
+		assert.NotNil(t, result)
+		_, _ = fmt.Fprintf(os.Stdout, "Received result : %s\n", result)
 		//
 		//g := cloneGraphTraversalSource(&Graph{}, NewGremlinLang(nil), nil)
 		//b := g.V().Count().Bytecode

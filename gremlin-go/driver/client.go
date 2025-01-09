@@ -62,6 +62,7 @@ type Client struct {
 	connections        connectionPool
 	session            string
 	connectionSettings *connectionSettings
+	protocol           protocol
 }
 
 // NewClient creates a Client and configures it with the given parameters. During creation of the Client, a connection
@@ -123,6 +124,11 @@ func NewClient(url string, configurations ...func(settings *ClientSettings)) (*C
 		return nil, err
 	}
 
+	prot, err := newHttpProtocol(logHandler, url, connSettings)
+	if err != nil {
+		return nil, err
+	}
+
 	client := &Client{
 		url:                url,
 		traversalSource:    settings.TraversalSource,
@@ -131,6 +137,7 @@ func NewClient(url string, configurations ...func(settings *ClientSettings)) (*C
 		connections:        pool,
 		session:            "",
 		connectionSettings: connSettings,
+		protocol:           prot,
 	}
 
 	return client, nil
@@ -159,12 +166,9 @@ func (client *Client) errorCallback() {
 func (client *Client) SubmitWithOptions(traversalString string, requestOptions RequestOptions) (ResultSet, error) {
 	client.logHandler.logf(Debug, submitStartedString, traversalString)
 	request := makeStringRequest(traversalString, client.traversalSource, client.session, requestOptions)
-	protocol, err := newHttpProtocol(client.logHandler, client.url, client.connectionSettings)
-	if err != nil {
-		return nil, err
-	}
+
 	// write and send request
-	err = protocol.write(&request)
+	err := client.protocol.write(&request)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +176,7 @@ func (client *Client) SubmitWithOptions(traversalString string, requestOptions R
 	rs := newChannelResultSet(request.requestID.String(), results)
 	results.store(request.requestID.String(), rs)
 	// read and handle response
-	protocol.readLoop(results, client.errorCallback)
+	client.protocol.readLoop(results, client.errorCallback)
 	// return the ResultSet from which the caller can obtain result(s)
 	return rs, err
 }
