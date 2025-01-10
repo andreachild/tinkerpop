@@ -608,24 +608,27 @@ func TestConnection(t *testing.T) {
 		assert.NotNil(t, client)
 		defer client.Close()
 
-		resultSet, err := client.Submit("g.V().count()")
-		assert.Nil(t, err)
-		assert.NotNil(t, resultSet)
-		result, ok, err := resultSet.One()
-		assert.Nil(t, err)
-		assert.True(t, ok)
-		assert.NotNil(t, result)
-		_, _ = fmt.Fprintf(os.Stdout, "Received result : %s\n", result)
+		var wg sync.WaitGroup
 
-		// submit 2nd request
-		resultSet, err = client.Submit("g.V().count()")
-		assert.Nil(t, err)
-		assert.NotNil(t, resultSet)
-		result, ok, err = resultSet.One()
-		assert.Nil(t, err)
-		assert.True(t, ok)
-		assert.NotNil(t, result)
-		_, _ = fmt.Fprintf(os.Stdout, "Received result : %s\n", result)
+		for i := 0; i < 5; i++ {
+			wg.Add(1)
+			go func(i int) {
+				defer wg.Done()
+				resultSet, err := client.Submit("g.V().count().as('c').math('c + " + strconv.Itoa(i) + "')")
+				assert.Nil(t, err)
+				assert.NotNil(t, resultSet)
+				result, ok, err := resultSet.One()
+				assert.Nil(t, err)
+				assert.True(t, ok)
+				assert.NotNil(t, result)
+				c, err := result.GetInt()
+				assert.Equal(t, 6+i, c)
+				_, _ = fmt.Fprintf(os.Stdout, "Received result : %s\n", result)
+			}(i)
+		}
+
+		wg.Wait()
+
 		//
 		//g := cloneGraphTraversalSource(&Graph{}, NewGremlinLang(nil), nil)
 		//b := g.V().Count().Bytecode

@@ -37,7 +37,6 @@ const authenticationFailed = uint16(151)
 
 type protocolBase struct {
 	protocol
-	request     *request
 	transporter transporter
 }
 

@@ -30,14 +30,16 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sync"
 )
 
 type HttpTransporter struct {
 	url             string
 	isClosed        bool
 	connSettings    *connectionSettings
-	responseChannel chan []byte
+	responseChannel chan []byte // response channel needs to be per request, not per client
 	client          http.Client
+	wg              *sync.WaitGroup
 }
 
 func NewHttpTransporter(url string, connSettings *connectionSettings) *HttpTransporter {
@@ -53,18 +55,15 @@ func NewHttpTransporter(url string, connSettings *connectionSettings) *HttpTrans
 		Timeout:   connSettings.connectionTimeout,
 	}
 
+	wg := &sync.WaitGroup{}
+
 	return &HttpTransporter{
 		url:             url,
 		connSettings:    connSettings,
 		responseChannel: make(chan []byte, writeChannelSizeDefault),
 		client:          c,
+		wg:              wg,
 	}
-}
-
-func (transporter *HttpTransporter) Connect() (err error) {
-	// http transporter delegates connection management to the http client
-	// TODO verify that connections are being reused and cleaned up when appropriate
-	return
 }
 
 func (transporter *HttpTransporter) Write(data []byte) error {
@@ -127,13 +126,6 @@ func (transporter *HttpTransporter) Write(data []byte) error {
 	return nil
 }
 
-func (transporter *HttpTransporter) getAuthInfo() AuthInfoProvider {
-	if transporter.connSettings.authInfo == nil {
-		return NoopAuthInfo
-	}
-	return transporter.connSettings.authInfo
-}
-
 func (transporter *HttpTransporter) Read() ([]byte, error) {
 	fmt.Println("Reading from responseChannel")
 	msg, ok := <-transporter.responseChannel
@@ -152,8 +144,4 @@ func (transporter *HttpTransporter) Close() (err error) {
 		transporter.isClosed = true
 	}
 	return
-}
-
-func (transporter *HttpTransporter) IsClosed() bool {
-	return transporter.isClosed
 }
