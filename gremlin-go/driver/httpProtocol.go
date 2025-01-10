@@ -32,14 +32,28 @@ type httpProtocol struct {
 	logHandler   *logHandler
 	url          string
 	connSettings *connectionSettings
+	httpClient   *http.Client
 }
 
 func newHttpProtocol(handler *logHandler, url string, connSettings *connectionSettings) (*httpProtocol, error) {
+	transport := &http.Transport{
+		TLSClientConfig:    connSettings.tlsConfig,
+		MaxConnsPerHost:    0, // TODO
+		IdleConnTimeout:    0, // TODO
+		DisableCompression: !connSettings.enableCompression,
+	}
+
+	httpClient := http.Client{
+		Transport: transport,
+		Timeout:   connSettings.connectionTimeout,
+	}
+
 	httpProt := &httpProtocol{
 		serializer:   newGraphBinarySerializer(handler),
 		logHandler:   handler,
 		url:          url,
 		connSettings: connSettings,
+		httpClient:   &httpClient,
 	}
 	return httpProt, nil
 }
@@ -56,7 +70,7 @@ func (protocol *httpProtocol) send(request *request) (ResultSet, error) {
 		return nil, err
 	}
 
-	transport := NewHttpTransporter(protocol.url, protocol.connSettings)
+	transport := NewHttpTransporter(protocol.url, protocol.connSettings, protocol.httpClient)
 
 	// async send request and wait for response
 	transport.wg.Add(1)
