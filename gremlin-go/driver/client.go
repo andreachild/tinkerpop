@@ -22,7 +22,6 @@ package gremlingo
 import (
 	"crypto/tls"
 	"runtime"
-	"sync"
 	"time"
 
 	"golang.org/x/text/language"
@@ -62,7 +61,7 @@ type Client struct {
 	connections        connectionPool
 	session            string
 	connectionSettings *connectionSettings
-	protocol           protocol
+	httpProtocol       *httpProtocol
 }
 
 // NewClient creates a Client and configures it with the given parameters. During creation of the Client, a connection
@@ -71,7 +70,6 @@ type Client struct {
 func NewClient(url string, configurations ...func(settings *ClientSettings)) (*Client, error) {
 	settings := &ClientSettings{
 		TraversalSource:          "g",
-		TransporterType:          Http,
 		LogVerbosity:             Info,
 		Logger:                   &defaultLogger{},
 		Language:                 language.English,
@@ -115,16 +113,8 @@ func NewClient(url string, configurations ...func(settings *ClientSettings)) (*C
 			settings.MaximumConcurrentConnections, settings.MaximumConcurrentConnections)
 		settings.InitialConcurrentConnections = settings.MaximumConcurrentConnections
 	}
-	pool, err := newLoadBalancingPool(url, logHandler, connSettings, settings.NewConnectionThreshold,
-		settings.MaximumConcurrentConnections, settings.InitialConcurrentConnections)
-	if err != nil {
-		if err != nil {
-			logHandler.logf(Error, logErrorGeneric, "NewClient", err.Error())
-		}
-		return nil, err
-	}
 
-	prot, err := newHttpProtocol(logHandler, url, connSettings)
+	httpProt, err := newHttpProtocol(logHandler, url, connSettings)
 	if err != nil {
 		return nil, err
 	}
@@ -134,10 +124,10 @@ func NewClient(url string, configurations ...func(settings *ClientSettings)) (*C
 		traversalSource:    settings.TraversalSource,
 		logHandler:         logHandler,
 		transporterType:    settings.TransporterType,
-		connections:        pool,
+		connections:        nil,
 		session:            "",
 		connectionSettings: connSettings,
-		protocol:           prot,
+		httpProtocol:       httpProt,
 	}
 
 	return client, nil
@@ -155,7 +145,7 @@ func (client *Client) Close() {
 		client.session = ""
 	}
 	client.logHandler.logf(Info, closeClient, client.url)
-	client.connections.close()
+	//client.connections.close()
 }
 
 func (client *Client) errorCallback() {
@@ -167,17 +157,7 @@ func (client *Client) SubmitWithOptions(traversalString string, requestOptions R
 	client.logHandler.logf(Debug, submitStartedString, traversalString)
 	request := makeStringRequest(traversalString, client.traversalSource, client.session, requestOptions)
 
-	// write and send request
-	err := client.protocol.write(&request)
-	if err != nil {
-		return nil, err
-	}
-	results := &synchronizedMap{map[string]ResultSet{}, sync.Mutex{}}
-	rs := newChannelResultSet(request.requestID.String(), results)
-	results.store(request.requestID.String(), rs)
-	// read and handle response
-	client.protocol.readLoop(results, client.errorCallback)
-	// return the ResultSet from which the caller can obtain result(s)
+	rs, err := client.httpProtocol.send(&request)
 	return rs, err
 }
 
