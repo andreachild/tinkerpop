@@ -38,30 +38,18 @@ type HttpTransporter struct {
 	isClosed        bool
 	connSettings    *connectionSettings
 	responseChannel chan []byte // response channel needs to be per request, not per client
-	client          http.Client
+	httpClient      *http.Client
 	wg              *sync.WaitGroup
 }
 
-func NewHttpTransporter(url string, connSettings *connectionSettings) *HttpTransporter {
-	transport := &http.Transport{
-		TLSClientConfig:    connSettings.tlsConfig,
-		MaxConnsPerHost:    0, // TODO
-		IdleConnTimeout:    0, // TODO
-		DisableCompression: !connSettings.enableCompression,
-	}
-
-	c := http.Client{
-		Transport: transport,
-		Timeout:   connSettings.connectionTimeout,
-	}
-
+func NewHttpTransporter(url string, connSettings *connectionSettings, httpClient *http.Client) *HttpTransporter {
 	wg := &sync.WaitGroup{}
 
 	return &HttpTransporter{
 		url:             url,
 		connSettings:    connSettings,
 		responseChannel: make(chan []byte, writeChannelSizeDefault),
-		client:          c,
+		httpClient:      httpClient,
 		wg:              wg,
 	}
 }
@@ -98,7 +86,7 @@ func (transporter *HttpTransporter) Write(data []byte) error {
 		ContentLength: int64(len(data)),
 	}
 
-	resp, err := transporter.client.Do(&req)
+	resp, err := transporter.httpClient.Do(&req)
 	if err != nil {
 		return err
 	}

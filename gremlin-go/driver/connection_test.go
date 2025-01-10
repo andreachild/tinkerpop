@@ -608,25 +608,20 @@ func TestConnection(t *testing.T) {
 		assert.NotNil(t, client)
 		defer client.Close()
 
-		var wg sync.WaitGroup
+		// synchronous
+		for i := 0; i < 5; i++ {
+			submitCount(i, client, t)
+		}
 
+		// async
+		var wg sync.WaitGroup
 		for i := 0; i < 5; i++ {
 			wg.Add(1)
 			go func(i int) {
 				defer wg.Done()
-				resultSet, err := client.Submit("g.V().count().as('c').math('c + " + strconv.Itoa(i) + "')")
-				assert.Nil(t, err)
-				assert.NotNil(t, resultSet)
-				result, ok, err := resultSet.One()
-				assert.Nil(t, err)
-				assert.True(t, ok)
-				assert.NotNil(t, result)
-				c, err := result.GetInt()
-				assert.Equal(t, 6+i, c)
-				_, _ = fmt.Fprintf(os.Stdout, "Received result : %s\n", result)
+				submitCount(i, client, t)
 			}(i)
 		}
-
 		wg.Wait()
 
 		//
@@ -1291,4 +1286,17 @@ func TestConnection(t *testing.T) {
 			assert.Equal(t, 0, len(properties))
 		}
 	})
+}
+
+func submitCount(i int, client *Client, t *testing.T) {
+	resultSet, err := client.Submit("g.V().count().as('c').math('c + " + strconv.Itoa(i) + "')")
+	assert.Nil(t, err)
+	assert.NotNil(t, resultSet)
+	result, ok, err := resultSet.One()
+	assert.Nil(t, err)
+	assert.True(t, ok)
+	assert.NotNil(t, result)
+	c, err := result.GetInt()
+	assert.Equal(t, 6+i, c)
+	_, _ = fmt.Fprintf(os.Stdout, "Received result : %s\n", result)
 }
