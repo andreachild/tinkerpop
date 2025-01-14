@@ -89,9 +89,7 @@ func NewDriverRemoteConnection(
 		ReadBufferSize:  1048576,
 		WriteBufferSize: 1048576,
 
-		NewConnectionThreshold:       defaultNewConnectionThreshold,
 		MaximumConcurrentConnections: runtime.NumCPU(),
-		InitialConcurrentConnections: defaultInitialConcurrentConnections,
 	}
 	for _, configuration := range configurations {
 		configuration(settings)
@@ -115,26 +113,12 @@ func NewDriverRemoteConnection(
 		settings.MaximumConcurrentConnections = 1
 	}
 
-	if settings.InitialConcurrentConnections > settings.MaximumConcurrentConnections {
-		logHandler.logf(Warning, poolInitialExceedsMaximum, settings.InitialConcurrentConnections,
-			settings.MaximumConcurrentConnections, settings.MaximumConcurrentConnections)
-		settings.InitialConcurrentConnections = settings.MaximumConcurrentConnections
-	}
-	pool, err := newLoadBalancingPool(url, logHandler, connSettings, settings.NewConnectionThreshold,
-		settings.MaximumConcurrentConnections, settings.InitialConcurrentConnections)
-	if err != nil {
-		if err != nil {
-			logHandler.logf(Error, logErrorGeneric, "NewDriverRemoteConnection", err.Error())
-		}
-		return nil, err
-	}
-
 	client := &Client{
-		url:             url,
-		traversalSource: settings.TraversalSource,
-		logHandler:      logHandler,
-		connections:     pool,
-		session:         settings.session,
+		url:                url,
+		traversalSource:    settings.TraversalSource,
+		logHandler:         logHandler,
+		connectionSettings: connSettings,
+		session:            settings.session,
 	}
 
 	return &DriverRemoteConnection{client: client, isClosed: false, settings: settings}, nil
