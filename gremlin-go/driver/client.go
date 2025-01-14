@@ -56,7 +56,6 @@ type Client struct {
 	url                string
 	traversalSource    string
 	logHandler         *logHandler
-	connections        connectionPool
 	session            string
 	connectionSettings *connectionSettings
 	httpProtocol       *httpProtocol
@@ -84,9 +83,7 @@ func NewClient(url string, configurations ...func(settings *ClientSettings)) (*C
 		ReadBufferSize:  0,
 		WriteBufferSize: 0,
 
-		NewConnectionThreshold:       defaultNewConnectionThreshold,
 		MaximumConcurrentConnections: runtime.NumCPU(),
-		InitialConcurrentConnections: defaultInitialConcurrentConnections,
 	}
 	for _, configuration := range configurations {
 		configuration(settings)
@@ -106,12 +103,6 @@ func NewClient(url string, configurations ...func(settings *ClientSettings)) (*C
 
 	logHandler := newLogHandler(settings.Logger, settings.LogVerbosity, settings.Language)
 
-	if settings.InitialConcurrentConnections > settings.MaximumConcurrentConnections {
-		logHandler.logf(Warning, poolInitialExceedsMaximum, settings.InitialConcurrentConnections,
-			settings.MaximumConcurrentConnections, settings.MaximumConcurrentConnections)
-		settings.InitialConcurrentConnections = settings.MaximumConcurrentConnections
-	}
-
 	httpProt, err := newHttpProtocol(logHandler, url, connSettings)
 	if err != nil {
 		return nil, err
@@ -121,7 +112,6 @@ func NewClient(url string, configurations ...func(settings *ClientSettings)) (*C
 		url:                url,
 		traversalSource:    settings.TraversalSource,
 		logHandler:         logHandler,
-		connections:        nil,
 		session:            "",
 		connectionSettings: connSettings,
 		httpProtocol:       httpProt,
@@ -176,22 +166,22 @@ func (client *Client) submitGremlinLang(gremlinLang *GremlinLang) (ResultSet, er
 	// TODO placeholder
 	requestOptionsBuilder := new(RequestOptionsBuilder)
 	request := makeStringRequest(gremlinLang.GetGremlin(), client.traversalSource, client.session, requestOptionsBuilder.Create())
-	return client.connections.write(&request)
+	return client.httpProtocol.send(&request)
 }
 
 // submitBytecode submits Bytecode to the server to execute and returns a ResultSet.
 func (client *Client) submitBytecode(bytecode *Bytecode) (ResultSet, error) {
 	client.logHandler.logf(Debug, submitStartedBytecode, *bytecode)
 	request := makeBytecodeRequest(bytecode, client.traversalSource, client.session)
-	return client.connections.write(&request)
+	return client.httpProtocol.send(&request)
 }
 
 func (client *Client) closeSession() error {
-	message := makeCloseSessionRequest(client.session)
-	result, err := client.connections.write(&message)
-	if err != nil {
-		return err
-	}
-	_, err = result.All()
-	return err
+	//message := makeCloseSessionRequest(client.session)
+	//result, err := client.connections.write(&message)
+	//if err != nil {
+	//	return err
+	//}
+	//_, err = result.All()
+	return nil
 }
