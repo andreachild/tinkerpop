@@ -34,7 +34,7 @@ func TestProtocol(t *testing.T) {
 		connSettings.authInfo, connSettings.tlsConfig = nil, nil
 		connSettings.keepAliveInterval, connSettings.writeDeadline, connSettings.writeDeadline = keepAliveIntervalDefault, writeDeadlineDefault, connectionTimeoutDefault
 
-		protocol, err := newGremlinServerWSProtocol(newLogHandler(&defaultLogger{}, Info, language.English), Gorilla,
+		protocol, err := newGremlinServerWSProtocol(newLogHandler(&defaultLogger{}, Info, language.English),
 			"ws://localhost:9000/gremlin", connSettings,
 			nil, nil)
 		assert.NotNil(t, err)
