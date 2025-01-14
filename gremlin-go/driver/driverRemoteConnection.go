@@ -33,7 +33,6 @@ type DriverRemoteConnectionSettings struct {
 	session string
 
 	TraversalSource          string
-	TransporterType          TransporterType
 	LogVerbosity             LogVerbosity
 	Logger                   Logger
 	Language                 language.Tag
@@ -74,7 +73,6 @@ func NewDriverRemoteConnection(
 		session: "",
 
 		TraversalSource:          "g",
-		TransporterType:          Gorilla,
 		LogVerbosity:             Info,
 		Logger:                   &defaultLogger{},
 		Language:                 language.English,
@@ -135,7 +133,6 @@ func NewDriverRemoteConnection(
 		url:             url,
 		traversalSource: settings.TraversalSource,
 		logHandler:      logHandler,
-		transporterType: settings.TransporterType,
 		connections:     pool,
 		session:         settings.session,
 	}
@@ -216,7 +213,6 @@ func (driver *DriverRemoteConnection) CreateSession(sessionId ...string) (*Drive
 		}
 		// copy other settings from parent
 		settings.TraversalSource = driver.settings.TraversalSource
-		settings.TransporterType = driver.settings.TransporterType
 		settings.Logger = driver.settings.Logger
 		settings.LogVerbosity = driver.settings.LogVerbosity
 		settings.Language = driver.settings.Language

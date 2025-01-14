@@ -596,8 +596,8 @@ func TestConnection(t *testing.T) {
 			InsecureSkipVerify: true,
 		}
 
-		//client, err := NewClient(testNoAuthUrl,
-		client, err := NewClient(noAuthSslUrl,
+		client, err := NewClient(testNoAuthUrl,
+			//client, err := NewClient(noAuthSslUrl,
 			func(settings *ClientSettings) {
 				settings.TlsConfig = &tlsConf
 				settings.AuthInfo = testNoAuthAuthInfo

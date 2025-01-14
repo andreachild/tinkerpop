@@ -30,7 +30,6 @@ import (
 // ClientSettings is used to modify a Client's settings on initialization.
 type ClientSettings struct {
 	TraversalSource   string
-	TransporterType   TransporterType
 	LogVerbosity      LogVerbosity
 	Logger            Logger
 	Language          language.Tag
@@ -57,7 +56,6 @@ type Client struct {
 	url                string
 	traversalSource    string
 	logHandler         *logHandler
-	transporterType    TransporterType
 	connections        connectionPool
 	session            string
 	connectionSettings *connectionSettings
@@ -123,7 +121,6 @@ func NewClient(url string, configurations ...func(settings *ClientSettings)) (*C
 		url:                url,
 		traversalSource:    settings.TraversalSource,
 		logHandler:         logHandler,
-		transporterType:    settings.TransporterType,
 		connections:        nil,
 		session:            "",
 		connectionSettings: connSettings,
