@@ -31,7 +31,13 @@ import (
 	"net/url"
 	"os"
 	"sync"
+	"time"
 )
+
+const keepAliveIntervalDefault = 5 * time.Second
+const writeDeadlineDefault = 3 * time.Second
+const writeChannelSizeDefault = 100
+const connectionTimeoutDefault = 5 * time.Second
 
 type HttpTransporter struct {
 	url             string

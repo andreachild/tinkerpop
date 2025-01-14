@@ -64,7 +64,7 @@ type DriverRemoteConnection struct {
 
 // NewDriverRemoteConnection creates a new DriverRemoteConnection.
 // If no custom connection settings are passed in, a connection will be created with "g" as the default TraversalSource,
-// Gorilla as the default Transporter, Info as the default LogVerbosity, a default logger struct, and English and as the
+// Info as the default LogVerbosity, a default logger struct, and English and as the
 // default language
 func NewDriverRemoteConnection(
 	url string,
@@ -84,7 +84,7 @@ func NewDriverRemoteConnection(
 		EnableCompression:        false,
 		EnableUserAgentOnConnect: true,
 		// ReadBufferSize and WriteBufferSize specify I/O buffer sizes in bytes. The default is 1048576.
-		// If a buffer size is set zero, then the Gorilla websocket 4096 default size is used. The I/O buffer
+		// If a buffer size is set zero, then the default size is used. The I/O buffer
 		// sizes do not limit the size of the messages that can be sent or received.
 		ReadBufferSize:  1048576,
 		WriteBufferSize: 1048576,
