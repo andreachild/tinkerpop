@@ -108,15 +108,15 @@ func createConnection(url string, logHandler *logHandler, connSettings *connecti
 		initialized,
 	}
 	logHandler.log(Info, connectConnection)
-	protocol, err := newGremlinServerWSProtocol(logHandler, url, connSettings, conn.results, conn.errorCallback)
-	if err != nil {
-		logHandler.logf(Warning, failedConnection)
-		conn.state = closedDueToError
-		return nil, err
-	}
-	conn.protocol = protocol
+	//protocol, err := newGremlinServerWSProtocol(logHandler, url, connSettings, conn.results, conn.errorCallback)
+	//if err != nil {
+	//	logHandler.logf(Warning, failedConnection)
+	//	conn.state = closedDueToError
+	//	return nil, err
+	//}
+	//conn.protocol = protocol
 	conn.state = established
-	return conn, err
+	return conn, nil
 }
 
 type synchronizedMap struct {
