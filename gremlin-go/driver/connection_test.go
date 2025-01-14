@@ -22,19 +22,15 @@ package gremlingo
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"math/big"
 	"os"
 	"reflect"
-	"runtime"
 	"sort"
 	"strconv"
 	"sync"
 	"testing"
-	"time"
-
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
-	"golang.org/x/text/language"
 )
 
 const personLabel = "Person"
@@ -259,10 +255,6 @@ func skipTestsIfNotEnabled(t *testing.T, testSuiteName string, testSuiteEnabled 
 	}
 }
 
-func deferredCleanup(t *testing.T, connection *connection) {
-	assert.Nil(t, connection.close())
-}
-
 func TestConnection(t *testing.T) {
 	// Integration test variables.
 	testNoAuthUrl := getEnvOrDefaultString("GREMLIN_SERVER_URL", noAuthUrl)
@@ -282,183 +274,6 @@ func TestConnection(t *testing.T) {
 	testBasicAuthEnable := getEnvOrDefaultBool("RUN_BASIC_AUTH_INTEGRATION_TESTS", false)
 	testBasicAuthAuthInfo := getBasicAuthInfo()
 	testBasicAuthTlsConfig := &tls.Config{InsecureSkipVerify: true}
-
-	testManual := getEnvOrDefaultBool("RUN_MANUAL_TEST", false)
-
-	t.Run("Test createConnection without valid server", func(t *testing.T) {
-		connection, err := createConnection(invalidHostValidPortValidPath, newLogHandler(&defaultLogger{}, Info,
-			language.English), newDefaultConnectionSettings())
-		assert.NotNil(t, err)
-		assert.Nil(t, connection)
-	})
-
-	t.Run("Test createConnection without valid port", func(t *testing.T) {
-		connection, err := createConnection(validHostInvalidPortValidPath, newLogHandler(&defaultLogger{}, Info,
-			language.English), newDefaultConnectionSettings())
-		assert.NotNil(t, err)
-		assert.Nil(t, connection)
-	})
-
-	t.Run("Test createConnection without valid path", func(t *testing.T) {
-		connSettings := newDefaultConnectionSettings()
-		t.Run("Test 1 second timeout", func(t *testing.T) {
-			connSettings.connectionTimeout = 1 * time.Second
-			t1 := time.Now()
-			connection, err := createConnection(nonRoutableIPForConnectionTimeout, newLogHandler(&defaultLogger{}, Info,
-				language.English), connSettings)
-			t2 := time.Since(t1)
-			assert.True(t, t2.Seconds() < 1.5 && t2.Seconds() > 0.5)
-			assert.NotNil(t, err)
-			assert.Nil(t, connection)
-		})
-
-		t.Run("Test 2 second timeout", func(t *testing.T) {
-			connSettings.connectionTimeout = 2 * time.Second
-			t1 := time.Now()
-			connection, err := createConnection(nonRoutableIPForConnectionTimeout, newLogHandler(&defaultLogger{}, Info,
-				language.English), connSettings)
-			t2 := time.Since(t1)
-			assert.True(t, t2.Seconds() < 2.5 && t2.Seconds() > 1.5)
-			assert.NotNil(t, err)
-			assert.Nil(t, connection)
-		})
-
-		t.Run("Test 3 second timeout", func(t *testing.T) {
-			connSettings.connectionTimeout = 3 * time.Second
-			t1 := time.Now()
-			connection, err := createConnection(nonRoutableIPForConnectionTimeout, newLogHandler(&defaultLogger{}, Info,
-				language.English), connSettings)
-			t2 := time.Since(t1)
-			assert.True(t, t2.Seconds() < 3.5 && t2.Seconds() > 2.5)
-			assert.NotNil(t, err)
-			assert.Nil(t, connection)
-		})
-	})
-
-	t.Run("Test DriverRemoteConnection GraphTraversal", func(t *testing.T) {
-		skipTestsIfNotEnabled(t, integrationTestSuiteName, testNoAuthEnable)
-
-		// Initialize graph
-		g := initializeGraph(t, testNoAuthUrl, testNoAuthAuthInfo, testNoAuthTlsConfig)
-		defer g.remoteConnection.Close()
-
-		// Read test data out of the graph and check that it is correct.
-		readTestDataVertexProperties(t, g)
-		readTestDataValues(t, g)
-
-		// Reset Graph
-		resetGraph(t, g)
-	})
-
-	t.Run("Test createConnection", func(t *testing.T) {
-		skipTestsIfNotEnabled(t, integrationTestSuiteName, testNoAuthEnable)
-		connection, err := createConnection(testNoAuthUrl, newLogHandler(&defaultLogger{}, Info, language.English),
-			newDefaultConnectionSettings())
-		assert.Nil(t, err)
-		assert.NotNil(t, connection)
-		assert.Equal(t, established, connection.state)
-		defer deferredCleanup(t, connection)
-	})
-
-	t.Run("Test createConnection with compression", func(t *testing.T) {
-		skipTestsIfNotEnabled(t, integrationTestSuiteName, testNoAuthEnable)
-		setting := newDefaultConnectionSettings()
-		setting.enableCompression = true
-		connection, err := createConnection(testNoAuthUrl, newLogHandler(&defaultLogger{}, Info, language.English),
-			setting)
-		assert.Nil(t, err)
-		assert.NotNil(t, connection)
-		assert.Equal(t, established, connection.state)
-		defer deferredCleanup(t, connection)
-	})
-
-	t.Run("Test connection.write() with small buffer size", func(t *testing.T) {
-		skipTestsIfNotEnabled(t, integrationTestSuiteName, testNoAuthEnable)
-		setting := newDefaultConnectionSettings()
-		setting.readBufferSize = 100
-		setting.writeBufferSize = 150
-		setting.connectionTimeout = 1 * time.Second
-		connection, err := createConnection(testNoAuthUrl, newLogHandler(&defaultLogger{}, Info, language.English),
-			setting)
-		assert.Nil(t, err)
-		assert.NotNil(t, connection)
-		assert.Equal(t, established, connection.state)
-		defer deferredCleanup(t, connection)
-		request := makeStringRequest("g.V().count()", "g", "", *new(RequestOptions))
-		resultSet, err := connection.write(&request)
-		assert.Nil(t, err)
-		assert.NotNil(t, resultSet)
-		result, ok, err := resultSet.One()
-		assert.Nil(t, err)
-		assert.True(t, ok)
-		assert.NotNil(t, result)
-	})
-
-	t.Run("Test connection.write()", func(t *testing.T) {
-		skipTestsIfNotEnabled(t, integrationTestSuiteName, testNoAuthEnable)
-		connection, err := createConnection(testNoAuthUrl, newLogHandler(&defaultLogger{}, Info, language.English),
-			newDefaultConnectionSettings())
-		assert.Nil(t, err)
-		assert.NotNil(t, connection)
-		assert.Equal(t, established, connection.state)
-		defer deferredCleanup(t, connection)
-		request := makeStringRequest("g.V().count()", "g", "", *new(RequestOptions))
-		resultSet, err := connection.write(&request)
-		assert.Nil(t, err)
-		assert.NotNil(t, resultSet)
-		result, ok, err := resultSet.One()
-		assert.Nil(t, err)
-		assert.True(t, ok)
-		assert.NotNil(t, result)
-	})
-
-	t.Run("Test connection.close() failure", func(t *testing.T) {
-		skipTestsIfNotEnabled(t, integrationTestSuiteName, testNoAuthEnable)
-		connection, err := createConnection(testNoAuthUrl, newLogHandler(&defaultLogger{}, Info, language.English),
-			newDefaultConnectionSettings())
-		assert.Equal(t, established, connection.state)
-		assert.Nil(t, err)
-		err = connection.close()
-		assert.Nil(t, err)
-		assert.Equal(t, closed, connection.state)
-		err = connection.close()
-		assert.Equal(t, newError(err0101ConnectionCloseError), err)
-		assert.Equal(t, closed, connection.state)
-		err = connection.close()
-		assert.Equal(t, newError(err0101ConnectionCloseError), err)
-		assert.Equal(t, closed, connection.state)
-	})
-
-	t.Run("Test connection.write() after close() failure", func(t *testing.T) {
-		skipTestsIfNotEnabled(t, integrationTestSuiteName, testNoAuthEnable)
-		connection, err := createConnection(testNoAuthUrl, newLogHandler(&defaultLogger{}, Info, language.English),
-			newDefaultConnectionSettings())
-		assert.Equal(t, established, connection.state)
-		assert.Nil(t, err)
-		err = connection.close()
-		assert.Nil(t, err)
-		assert.Equal(t, closed, connection.state)
-		request := makeStringRequest("g.V().count()", "g", "", *new(RequestOptions))
-		resultSet, err := connection.write(&request)
-		assert.Nil(t, resultSet)
-		assert.Equal(t, newError(err0102WriteConnectionClosedError), err)
-		assert.Equal(t, closed, connection.state)
-	})
-
-	t.Run("Test server closes websocket", func(t *testing.T) {
-		skipTestsIfNotEnabled(t, manualTestSuiteName, testManual)
-		connSettings := newDefaultConnectionSettings()
-		connSettings.keepAliveInterval = 500 * keepAliveIntervalDefault
-		connection, err := createConnection(testNoAuthUrl, newLogHandler(&defaultLogger{}, Info, language.English),
-			connSettings)
-		assert.Equal(t, established, connection.state)
-		assert.Nil(t, err)
-		time.Sleep(120 * time.Second)
-		request := makeStringRequest("g.V().count()", "g", "", *new(RequestOptions))
-		resultSet, err := connection.write(&request)
-		assert.Nil(t, resultSet)
-		assert.NotNil(t, err)
-	})
 
 	// this test is used to test the ws->http POC changes via manual execution with a local TP 4.0 gremlin server running on 8182
 	t.Run("Test client.submit()", func(t *testing.T) {
@@ -994,28 +809,6 @@ func TestConnection(t *testing.T) {
 
 		// Drop the graph.
 		dropGraph(t, g)
-	})
-
-	// This test needs to be run as a standalone since other tests running can cause goroutine count to fluctuate.
-	// If this test is not run manually and isolated it will have floating failures.
-	t.Run("Test connection goroutine cleanup", func(t *testing.T) {
-		skipTestsIfNotEnabled(t, manualTestSuiteName, testManual)
-
-		startCount := runtime.NumGoroutine()
-
-		connection, err := createConnection(testNoAuthUrl, newLogHandler(&defaultLogger{}, Info, language.English),
-			newDefaultConnectionSettings())
-		assert.Nil(t, err)
-		assert.NotNil(t, connection)
-		assert.Equal(t, established, connection.state)
-
-		// Read loop, write loop, this routine.
-		assert.Equal(t, startCount+2, runtime.NumGoroutine())
-
-		assert.Nil(t, connection.close())
-
-		// This routine.
-		assert.Equal(t, startCount, runtime.NumGoroutine())
 	})
 
 	t.Run("Test per-request arguments", func(t *testing.T) {
