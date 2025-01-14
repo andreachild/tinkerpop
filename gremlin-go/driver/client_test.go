@@ -316,7 +316,7 @@ func TestClientAgainstSocketServer(t *testing.T) {
 	})
 
 	/**
-	 * Tests that no user agent (other than the default one provided by gorilla) is sent to server when
+	 * Tests that no user agent (other than the default one) is sent to server when
 	 * that behaviour is disabled.
 	 */
 	t.Run("Should not include user agent in handshake request if disabled", func(t *testing.T) {
