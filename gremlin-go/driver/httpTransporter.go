@@ -43,7 +43,7 @@ type HttpTransporter struct {
 	url             string
 	isClosed        bool
 	connSettings    *connectionSettings
-	responseChannel chan []byte // response channel needs to be per request, not per client
+	responseChannel chan []byte
 	httpClient      *http.Client
 	wg              *sync.WaitGroup
 }

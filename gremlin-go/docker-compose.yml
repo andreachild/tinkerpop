@@ -53,12 +53,12 @@ services:
       - ../gremlin-tools/gremlin-socket-server/conf:/go_app/gremlin-socket-server/conf/
     environment:
       - CUCUMBER_FEATURE_FOLDER=/gremlin-test
-      - GREMLIN_SERVER_URL=ws://gremlin-server-test:45940/gremlin
+      - GREMLIN_SERVER_URL=http://gremlin-server-test:45940/gremlin
       - GREMLIN_SERVER_BASIC_AUTH_URL=wss://gremlin-server-test:45941/gremlin
       - RUN_INTEGRATION_TESTS=true
       - RUN_INTEGRATION_WITH_ALIAS_TESTS=true
       - RUN_BASIC_AUTH_INTEGRATION_TESTS=true
-      - GREMLIN_SOCKET_SERVER_URL=ws://gremlin-socket-server-go
+      - GREMLIN_SOCKET_SERVER_URL=http://gremlin-socket-server-go
       - GREMLIN_SOCKET_SERVER_CONFIG_PATH=/go_app/gremlin-socket-server/conf/test-ws-gremlin.yaml
     working_dir: /go_app
     command: >

@@ -27,6 +27,8 @@ import (
 	"sync"
 )
 
+const authenticationFailed = uint16(151)
+
 type httpProtocol struct {
 	serializer   serializer
 	logHandler   *logHandler

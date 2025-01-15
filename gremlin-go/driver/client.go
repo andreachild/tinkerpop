@@ -42,12 +42,8 @@ type ClientSettings struct {
 	ReadBufferSize    int
 	WriteBufferSize   int
 
-	// Minimum amount of concurrent active traversals on a connection to trigger creation of a new connection
-	NewConnectionThreshold int
 	// Maximum number of concurrent connections. Default: number of runtime processors
 	MaximumConcurrentConnections int
-	// Initial amount of instantiated connections. Default: 1
-	InitialConcurrentConnections int
 	EnableUserAgentOnConnect     bool
 }
 
@@ -61,8 +57,7 @@ type Client struct {
 	httpProtocol       *httpProtocol
 }
 
-// NewClient creates a Client and configures it with the given parameters. During creation of the Client, a connection
-// is created, which establishes a websocket.
+// NewClient creates a Client and configures it with the given parameters.
 // Important note: to avoid leaking a connection, always close the Client.
 func NewClient(url string, configurations ...func(settings *ClientSettings)) (*Client, error) {
 	settings := &ClientSettings{
