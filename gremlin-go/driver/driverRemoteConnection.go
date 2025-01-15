@@ -113,12 +113,18 @@ func NewDriverRemoteConnection(
 		settings.MaximumConcurrentConnections = 1
 	}
 
+	httpProt, err := newHttpProtocol(logHandler, url, connSettings)
+	if err != nil {
+		return nil, err
+	}
+
 	client := &Client{
 		url:                url,
 		traversalSource:    settings.TraversalSource,
 		logHandler:         logHandler,
 		connectionSettings: connSettings,
 		session:            settings.session,
+		httpProtocol:       httpProt,
 	}
 
 	return &DriverRemoteConnection{client: client, isClosed: false, settings: settings}, nil
