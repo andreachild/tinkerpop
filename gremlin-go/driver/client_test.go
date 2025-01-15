@@ -265,7 +265,7 @@ func TestClientAgainstSocketServer(t *testing.T) {
 	// Integration test variables.
 	testNoAuthEnable := getEnvOrDefaultBool("RUN_INTEGRATION_TESTS", true)
 	settings := FromYaml(getEnvOrDefaultString("GREMLIN_SOCKET_SERVER_CONFIG_PATH", "../../gremlin-tools/gremlin-socket-server/conf/test-ws-gremlin.yaml"))
-	testSocketServerUrl := getEnvOrDefaultString("GREMLIN_SOCKET_SERVER_URL", "ws://localhost")
+	testSocketServerUrl := getEnvOrDefaultString("GREMLIN_SOCKET_SERVER_URL", "http://localhost")
 	testSocketServerUrl = fmt.Sprintf("%s:%v/gremlin", testSocketServerUrl, settings.PORT)
 
 	/**

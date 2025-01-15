@@ -38,13 +38,13 @@ const testLabel = "Test"
 const nameKey = "name"
 const integrationTestSuiteName = "integration"
 const basicAuthIntegrationTestSuite = "basic authentication integration"
-const validHostInvalidPortValidPath = "ws://localhost:12341253/gremlin"
-const invalidHostValidPortValidPath = "ws://invalidhost:8182/gremlin"
+const validHostInvalidPortValidPath = "http://localhost:12341253/gremlin"
+const invalidHostValidPortValidPath = "http://invalidhost:8182/gremlin"
 const testServerModernGraphAlias = "gmodern"
 const testServerGraphAlias = "gimmutable"
 const testServerCrewGraphAlias = "gcrew"
 const manualTestSuiteName = "manual"
-const nonRoutableIPForConnectionTimeout = "ws://10.255.255.1/"
+const nonRoutableIPForConnectionTimeout = "http://10.255.255.1/"
 
 // transaction is enabled on the same port as no auth url
 const noAuthUrl = "http://localhost:8182/gremlin"
@@ -269,7 +269,7 @@ func TestConnection(t *testing.T) {
 	testNoAuthWithAliasTlsConfig := &tls.Config{}
 
 	// Basic authentication integration test variables.
-	// TODO using "wss:" to connect to an auth server without ssl enabled ("ws:") will give an "EOF" error in NewDriverRemoteConnection, bug?
+	// TODO using "wss:" to connect to an auth server without ssl enabled ("http:") will give an "EOF" error in NewDriverRemoteConnection, bug?
 	testBasicAuthUrl := getEnvOrDefaultString("GREMLIN_SERVER_BASIC_AUTH_URL", basicAuthWithSsl)
 	testBasicAuthEnable := getEnvOrDefaultBool("RUN_BASIC_AUTH_INTEGRATION_TESTS", false)
 	testBasicAuthAuthInfo := getBasicAuthInfo()
