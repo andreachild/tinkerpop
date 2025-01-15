@@ -80,7 +80,10 @@ func (protocol *httpProtocol) send(request *request) (ResultSet, error) {
 		defer transport.wg.Done()
 		err := transport.Write(bytes)
 		if err != nil {
+			rs.setError(err)
+			rs.Close()
 			protocol.errorCallback()
+			err = transport.Close()
 		}
 	}()
 
@@ -90,10 +93,14 @@ func (protocol *httpProtocol) send(request *request) (ResultSet, error) {
 		defer transport.wg.Done()
 		msg, err := transport.Read()
 		if err != nil {
+			rs.setError(err)
+			rs.Close()
 			protocol.errorCallback()
+			err = transport.Close()
 		} else {
 			protocol.receive(rs, msg, protocol.errorCallback)
 		}
+		rs.Close()
 		err = transport.Close()
 	}()
 
