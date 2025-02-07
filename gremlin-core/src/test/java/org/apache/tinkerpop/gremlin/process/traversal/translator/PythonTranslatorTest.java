@@ -26,7 +26,6 @@ import org.apache.tinkerpop.gremlin.process.traversal.Translator;
 import org.apache.tinkerpop.gremlin.process.traversal.Traverser;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__;
-import org.apache.tinkerpop.gremlin.process.traversal.lambda.CardinalityValueTraversal;
 import org.apache.tinkerpop.gremlin.process.traversal.strategy.decoration.SeedStrategy;
 import org.apache.tinkerpop.gremlin.process.traversal.strategy.decoration.SubgraphStrategy;
 import org.apache.tinkerpop.gremlin.process.traversal.strategy.verification.ReadOnlyStrategy;
@@ -59,6 +58,13 @@ public class PythonTranslatorTest {
         final String gremlinAsPython = translator.translate(
                 g.V().has("person", "name", "marko").asAdmin().getBytecode()).getScript();
         assertEquals("g.V().has('person','name','marko')", gremlinAsPython);
+    }
+
+    @Test
+    public void shouldTranslateValues() {
+        final String gremlinAsPython = translator.translate(
+                g.V().values("age").asAdmin().getBytecode()).getScript();
+        assertEquals("g.V().age", gremlinAsPython);
     }
 
     @Test
