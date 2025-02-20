@@ -22,7 +22,9 @@ package gremlingo
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"math/big"
+	"os"
 	"reflect"
 	"strings"
 	"sync"
@@ -193,7 +195,7 @@ func (gs graphBinarySerializer) deserializeMessage(message []byte) (response, er
 		return msg, newError(err0405ReadValueInvalidNullInputError)
 	}
 
-	// Skip version and nullable byte.
+	//Skip version and nullable byte.
 	i := 2
 	id, err := readUuid(&message, &i)
 	if err != nil {
@@ -223,6 +225,7 @@ func (gs graphBinarySerializer) deserializeMessage(message []byte) (response, er
 	if err != nil {
 		return msg, err
 	}
+	_, _ = fmt.Fprintf(os.Stdout, "Deserialized data : %s\n", msg.responseResult.data)
 	return msg, nil
 }
 
