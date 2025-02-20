@@ -120,14 +120,10 @@ func NewClient(url string, configurations ...func(settings *ClientSettings)) (*C
 func (client *Client) Close() {
 	// If it is a session, call closeSession
 	if client.session != "" {
-		err := client.closeSession()
-		if err != nil {
-			client.logHandler.logf(Warning, closeSessionRequestError, client.url, client.session, err.Error())
-		}
+		// TODO remove references to session
 		client.session = ""
 	}
 	client.logHandler.logf(Info, closeClient, client.url)
-	//client.connections.close()
 }
 
 func (client *Client) errorCallback() {
@@ -169,14 +165,4 @@ func (client *Client) submitBytecode(bytecode *Bytecode) (ResultSet, error) {
 	client.logHandler.logf(Debug, submitStartedBytecode, *bytecode)
 	request := makeBytecodeRequest(bytecode, client.traversalSource, client.session)
 	return client.httpProtocol.send(&request)
-}
-
-func (client *Client) closeSession() error {
-	//message := makeCloseSessionRequest(client.session)
-	//result, err := client.connections.write(&message)
-	//if err != nil {
-	//	return err
-	//}
-	//_, err = result.All()
-	return nil
 }

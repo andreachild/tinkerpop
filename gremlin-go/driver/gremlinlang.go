@@ -62,7 +62,6 @@ func NewGremlinLang(gl *GremlinLang) *GremlinLang {
 
 func (gl *GremlinLang) addToGremlin(name string, args ...interface{}) error {
 	flattenedArgs := gl.flattenArguments(args...)
-	//flattenedArgs := reflect.ValueOf(gl.flattenArguments(args...))
 	if name == "CardinalityValueTraversal" {
 		gl.gremlin.WriteString("Cardinality.")
 		str0, err := gl.argAsString(flattenedArgs[0])

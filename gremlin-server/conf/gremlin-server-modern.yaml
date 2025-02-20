@@ -16,7 +16,7 @@
 # under the License.
 
 host: localhost
-port: 8182
+port: 45940
 evaluationTimeout: 30000
 channelizer: org.apache.tinkerpop.gremlin.server.channel.HttpChannelizer
 graphs: {
