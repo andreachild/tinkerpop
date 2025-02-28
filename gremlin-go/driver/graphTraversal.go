@@ -929,7 +929,7 @@ func (t *Transaction) Rollback() error {
 		return err
 	}
 
-	t.closeConnection()
+	t.close()
 	return nil
 }
 
@@ -941,7 +941,7 @@ func (t *Transaction) Commit() error {
 		return err
 	}
 
-	t.closeConnection()
+	t.close()
 	return nil
 }
 
@@ -953,7 +953,7 @@ func (t *Transaction) Close() error {
 		return err
 	}
 
-	t.closeConnection()
+	t.close()
 	return nil
 }
 
@@ -968,6 +968,6 @@ func (t *Transaction) verifyTransactionState(state bool, err error) error {
 	return nil
 }
 
-func (t *Transaction) closeConnection() {
+func (t *Transaction) close() {
 	t.isOpen = false
 }
