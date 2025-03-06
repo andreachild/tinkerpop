@@ -33,6 +33,7 @@ type errorCode string
 
 const (
 	// driverRemoteConnection.go errors
+	err0203SubmitGremlinLangToClosedConnectionError errorCode = "E0203_DRIVER_REMOTE_CONNECTION_SUBMITGREMLINLANG_TO_CLOSED_CONNECTION_ERROR"
 	err0203SubmitBytecodeToClosedConnectionError errorCode = "E0203_DRIVER_REMOTE_CONNECTION_SUBMITBYTECODE_TO_CLOSED_CONNECTION_ERROR"
 
 	// graph.go errors
