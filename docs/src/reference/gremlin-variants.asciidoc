@@ -2128,7 +2128,7 @@ the "g" provided to the `DriverRemoteConnection` corresponds to the name of a `G
 
 [source,python]
 ----
-g = traversal().with_remote(DriverRemoteConnection('ws://localhost:8182/gremlin','g'))
+g = traversal().with_(DriverRemoteConnection('ws://localhost:8182/gremlin','g'))
 ----
 
 If you need to send additional headers in the websockets connection, you can pass an optional `headers` parameter
@@ -2136,7 +2136,7 @@ to the `DriverRemoteConnection` constructor.
 
 [source,python]
 ----
-g = traversal().with_remote(DriverRemoteConnection(
+g = traversal().with_(DriverRemoteConnection(
     'ws://localhost:8182/gremlin', 'g', headers={'Header':'Value'}))
 ----
 
@@ -2145,11 +2145,11 @@ Gremlin-Python supports plain text and Kerberos SASL authentication, you can set
 [source,python]
 ----
 # Plain text authentication
-g = traversal().with_remote(DriverRemoteConnection(
+g = traversal().with_(DriverRemoteConnection(
     'ws://localhost:8182/gremlin', 'g', username='stephen', password='password'))
 
 # Kerberos authentication
-g = traversal().with_remote(DriverRemoteConnection(
+g = traversal().with_(DriverRemoteConnection(
     'ws://localhost:8182/gremlin', 'g', kerberized_service='gremlin@hostname.your.org'))
 ----
 
@@ -2291,7 +2291,7 @@ and the ability to call the api from an event loop:
 ----
 import ssl
 ...
-g = traversal().with_remote(
+g = traversal().with_(
   DriverRemoteConnection('ws://localhost:8182/gremlin','g',
                          transport_factory=lambda: AiohttpTransport(read_timeout=60,
                                                                     write_timeout=20,
@@ -2352,7 +2352,7 @@ builds on that content by demonstrating the transactional syntax for Python.
 
 [source,python]
 ----
-g = traversal().with_remote(DriverRemoteConnection('ws://localhost:8182/gremlin'))
+g = traversal().with_(DriverRemoteConnection('ws://localhost:8182/gremlin'))
 
 # Create a Transaction.
 tx = g.tx()
@@ -2556,7 +2556,7 @@ be used:
 
 [source,python]
 ----
-social = traversal(SocialTraversalSource).with_remote(DriverRemoteConnection('ws://localhost:8182/gremlin','g'))
+social = traversal(SocialTraversalSource).with_(DriverRemoteConnection('ws://localhost:8182/gremlin','g'))
 social.persons('marko').knows('josh')
 social.persons('marko').youngest_friends_age()
 social.persons().filter(__.created_at_least(2)).count()
@@ -2626,7 +2626,7 @@ from asynchronous code using a thread.
 [source,python]
 ----
 def print_vertices():
-    g = traversal().with(DriverRemoteConnection("ws://localhost:8182/gremlin"))
+    g = traversal().with_(DriverRemoteConnection("ws://localhost:8182/gremlin"))
     # Do your traversal.
 
 async def run_in_thread():
