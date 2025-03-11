@@ -276,7 +276,7 @@ namespace Gremlin.Net.IntegrationTest.Process.Traversal.DriverRemoteConnection
         public async Task ShouldThrowExceptionOnCommitWhenGraphNotSupportTx()
         {
             var connection = _connectionFactory.CreateRemoteConnection();
-            var g = AnonymousTraversalSource.Traversal().WithRemote(connection);
+            var g = AnonymousTraversalSource.Traversal().With(connection);
             var tx = g.Tx();
             var exception = await Assert.ThrowsAsync<ResponseException>(async () => await tx.CommitAsync());
             Assert.Equal("ServerError: Graph does not support transactions", exception.Message);
@@ -286,7 +286,7 @@ namespace Gremlin.Net.IntegrationTest.Process.Traversal.DriverRemoteConnection
         public async Task ShouldThrowExceptionOnRollbackWhenGraphNotSupportTx()
         {
             var connection = _connectionFactory.CreateRemoteConnection();
-            var g = AnonymousTraversalSource.Traversal().WithRemote(connection);
+            var g = AnonymousTraversalSource.Traversal().With(connection);
             var tx = g.Tx();
             var exception = await Assert.ThrowsAsync<ResponseException>(async () => await tx.RollbackAsync());
             Assert.Equal("ServerError: Graph does not support transactions", exception.Message);
@@ -296,7 +296,7 @@ namespace Gremlin.Net.IntegrationTest.Process.Traversal.DriverRemoteConnection
         public void shouldUseMaterializedPropertiesTokenInV()
         {
             var connection = _connectionFactory.CreateRemoteConnection();
-            var g = AnonymousTraversalSource.Traversal().WithRemote(connection);
+            var g = AnonymousTraversalSource.Traversal().With(connection);
             var vertices = g.With("materializeProperties", "tokens").V().ToList();
             foreach (var v in vertices)
             {
@@ -310,7 +310,7 @@ namespace Gremlin.Net.IntegrationTest.Process.Traversal.DriverRemoteConnection
         public void shouldUseMaterializedPropertiesTokenInE()
         {
             var connection = _connectionFactory.CreateRemoteConnection();
-            var g = AnonymousTraversalSource.Traversal().WithRemote(connection);
+            var g = AnonymousTraversalSource.Traversal().With(connection);
             var edges = g.With("materializeProperties", "tokens").E().ToList();
             foreach (var e in edges)
             {
@@ -324,7 +324,7 @@ namespace Gremlin.Net.IntegrationTest.Process.Traversal.DriverRemoteConnection
         public void shouldUseMaterializedPropertiesTokenInVP()
         {
             var connection = _connectionFactory.CreateRemoteConnection();
-            var g = AnonymousTraversalSource.Traversal().WithRemote(connection);
+            var g = AnonymousTraversalSource.Traversal().With(connection);
             var vps = g.With("materializeProperties", "tokens").V().Properties<VertexProperty>().ToList();
             foreach (var vp in vps)
             {
