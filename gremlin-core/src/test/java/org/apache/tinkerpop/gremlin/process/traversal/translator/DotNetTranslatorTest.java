@@ -137,6 +137,13 @@ public class DotNetTranslatorTest {
         final UUID uuid = UUID.fromString("ffffffff-fd49-1e4b-0000-00000d4b8a1d");
         assertTranslation(String.format("new Guid(\"%s\")", uuid), uuid);
     }
+    
+    @Test
+    public void shouldTranslateBigInteger() {
+        assertTranslation("new BigInteger(1)", 1 + "n");
+        assertTranslation("new BigInteger(1)", 1 + "N");
+        assertTranslation("new BigInteger(-1)", -1 + "n");
+    }
 
     @Test
     public void shouldTranslateP() {
