@@ -198,6 +198,13 @@ public final class DotNetTranslator implements Translator.ScriptTranslator {
                 if (NumberHelper.isNegativeInfinity(o))
                     return (o instanceof Float ? "Single" : "Double") + ".NegativeInfinity";
             }
+            
+            // Check if this is a BigInteger (ends with 'n' or 'N')
+            final String numStr = o.toString();
+            if (numStr.endsWith("n") || numStr.endsWith("N")) {
+                return "new BigInteger(" + numStr.substring(0, numStr.length() - 1) + ")";
+            }
+            
             return o.toString();
         }
 

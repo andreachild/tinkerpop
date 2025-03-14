@@ -25,7 +25,8 @@ image::https://raw.githubusercontent.com/apache/tinkerpop/master/docs/static/ima
 
 This release also includes changes from <<release-3-7-XXX, 3.7.XXX>>.
 
-*
+* Changed `sum()` to retain the type common to the stream rather than always promoting to `long` given the need for it to multiple by the `long` bulk value for the traverser.
+* Fixed handling of BigInteger values in DotNetTranslator to properly wrap them in `new BigInteger()` constructor calls.
 
 == TinkerPop 3.7.0 (Gremfir Master of the Pan Flute)
 
