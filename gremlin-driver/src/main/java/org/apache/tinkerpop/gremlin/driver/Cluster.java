@@ -209,6 +209,7 @@ public final class Cluster {
                 .maxConnectionPoolSize(settings.connectionPool.maxSize)
                 .minConnectionPoolSize(settings.connectionPool.minSize)
                 .connectionSetupTimeoutMillis(settings.connectionPool.connectionSetupTimeoutMillis)
+                .readTimeoutMillis(settings.connectionPool.readTimeoutMillis)
                 .enableUserAgentOnConnect(settings.enableUserAgentOnConnect)
                 .enableCompression(settings.enableCompression)
                 .validationRequest(settings.connectionPool.validationRequest);
@@ -444,6 +445,10 @@ public final class Cluster {
     public long getConnectionSetupTimeout() {
         return manager.connectionPoolSettings.connectionSetupTimeoutMillis;
     }
+    
+    public long getReadTimeout() {
+        return manager.connectionPoolSettings.readTimeoutMillis;
+    }
 
     /**
      * Specifies the load balancing strategy to use on the client side.
@@ -622,6 +627,7 @@ public final class Cluster {
         private UnaryOperator<FullHttpRequest> interceptor = HandshakeInterceptor.NO_OP;
         private AuthProperties authProps = new AuthProperties();
         private long connectionSetupTimeoutMillis = Connection.CONNECTION_SETUP_TIMEOUT_MILLIS;
+        private long readTimeoutMillis = Connection.READ_TIMEOUT_MILLIS;
         private boolean enableUserAgentOnConnect = true;
         private boolean enableCompression = true;
 
@@ -1029,6 +1035,11 @@ public final class Cluster {
             this.connectionSetupTimeoutMillis = connectionSetupTimeoutMillis;
             return this;
         }
+        
+        public Builder readTimeoutMillis(final long readTimeoutMillis) {
+            this.readTimeoutMillis = readTimeoutMillis;
+            return this;
+        }
 
         /**
          * Configures whether cluster will send a user agent during
@@ -1159,6 +1170,7 @@ public final class Cluster {
             connectionPoolSettings.channelizer = builder.channelizer;
             connectionPoolSettings.validationRequest = builder.validationRequest;
             connectionPoolSettings.connectionSetupTimeoutMillis = builder.connectionSetupTimeoutMillis;
+            connectionPoolSettings.readTimeoutMillis = builder.readTimeoutMillis;
 
             sslContextOptional = Optional.ofNullable(builder.sslContext);
 
@@ -1240,6 +1252,9 @@ public final class Cluster {
 
             if (builder.connectionSetupTimeoutMillis < 1)
                 throw new IllegalArgumentException("connectionSetupTimeoutMillis must be greater than zero");
+
+            if (builder.readTimeoutMillis < 0)
+                throw new IllegalArgumentException("connectionSetupTimeoutMillis must be greater than or equal to zero");
 
             try {
                 Class.forName(builder.channelizer);

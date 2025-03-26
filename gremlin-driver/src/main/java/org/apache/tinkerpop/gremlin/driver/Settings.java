@@ -419,6 +419,8 @@ final class Settings {
          * complete by then.
          */
         public long connectionSetupTimeoutMillis = Connection.CONNECTION_SETUP_TIMEOUT_MILLIS;
+        
+        public long readTimeoutMillis = Connection.READ_TIMEOUT_MILLIS;
     }
 
     public static class SerializerSettings {
