@@ -34,6 +34,7 @@ import org.apache.tinkerpop.gremlin.structure.Property;
 import org.apache.tinkerpop.gremlin.structure.T;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
+import org.apache.tinkerpop.gremlin.structure.io.gryo.kryoshim.shaded.ShadedOutputAdapter;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
 import org.apache.tinkerpop.gremlin.structure.util.keyed.KeyedProperty;
 import org.apache.tinkerpop.gremlin.structure.util.keyed.KeyedVertexProperty;
@@ -106,10 +107,6 @@ public class AddPropertyStep<S extends Element> extends SideEffectStep<S>
                     "Property cardinality can only be set for a Vertex but the traversal encountered %s for key: %s",
                     element.getClass().getSimpleName(), key));
 
-        VertexProperty.Cardinality cardinality = this.cardinality != null
-                ? this.cardinality
-                : element.graph().features().vertex().getCardinality(key);
-
         final Optional<EventStrategy> optEventStrategy = getTraversal().getStrategies().getStrategy(EventStrategy.class);
         final boolean eventingIsConfigured = EventUtil.hasAnyCallbacks(callbackRegistry)
                 && optEventStrategy.isPresent();
@@ -120,10 +117,14 @@ public class AddPropertyStep<S extends Element> extends SideEffectStep<S>
                 captureRemovedProperty(element, key, value, es) :
                 VertexProperty.empty();
 
+        final VertexProperty.Cardinality card = this.cardinality != null
+                ? this.cardinality
+                : element.graph().features().vertex().getCardinality(key);
+
         // update property
         if (element instanceof Vertex) {
-            if (null != this.cardinality) {
-                ((Vertex) element).property(this.cardinality, key, value, vertexPropertyKeyValues);
+            if (null != card) {
+                ((Vertex) element).property(card, key, value, vertexPropertyKeyValues);
             } else if (vertexPropertyKeyValues.length > 0) {
                 ((Vertex) element).property(key, value, vertexPropertyKeyValues);
             } else {
