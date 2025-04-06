@@ -18,6 +18,7 @@
  */
 package org.apache.tinkerpop.gremlin.driver;
 
+import java.util.concurrent.ExecutionException;
 import org.apache.tinkerpop.gremlin.util.Tokens;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,7 +71,8 @@ final class Connection {
     public static final int RECONNECT_INTERVAL = 1000;
     public static final int RESULT_ITERATION_BATCH_SIZE = 64;
     public static final long KEEP_ALIVE_INTERVAL = 180000;
-    public final static long CONNECTION_SETUP_TIMEOUT_MILLIS = 15000;
+    public static final long CONNECTION_SETUP_TIMEOUT_MILLIS = 15000;
+    public static final long READ_TIMEOUT_MILLIS = 0;
 
     /**
      * When a {@code Connection} is borrowed from the pool, this number is incremented to indicate the number of
@@ -215,7 +217,7 @@ final class Connection {
             throw new IllegalStateException(String.format("There is already a request pending with an id of: %s", requestMessage.getRequestId()));
 
         // once there is a completed write, then create a traverser for the result set and complete
-        // the promise so that the client knows that it can start checking for results.
+// the promise so that the client knows that it can start checking for results.
         final Connection thisConnection = this;
 
         final ChannelPromise requestPromise = channel.newPromise()
@@ -231,6 +233,21 @@ final class Connection {
                     } else {
                         final LinkedBlockingQueue<Result> resultLinkedBlockingQueue = new LinkedBlockingQueue<>();
                         final CompletableFuture<Void> readCompleted = new CompletableFuture<>();
+
+                        if (getCluster().getReadTimeout() > 0) {
+                            // Add timeout handling
+                            CompletableFuture.runAsync(() -> {
+                                try {
+                                    readCompleted.get(getCluster().getReadTimeout(), TimeUnit.MILLISECONDS);
+                                } catch (TimeoutException | ExecutionException | InterruptedException ex) {
+                                    if (Thread.interrupted()) {
+                                        // since we are not re-throwing InterruptedException, restore interrupted status
+                                        Thread.currentThread().interrupt();
+                                    }
+                                    readCompleted.completeExceptionally(ex);
+                                }
+                            }, cluster.executor());
+                        }
 
                         readCompleted.whenCompleteAsync((v, t) -> {
                             if (t != null) {
