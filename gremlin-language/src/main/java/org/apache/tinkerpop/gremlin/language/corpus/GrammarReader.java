@@ -34,8 +34,8 @@ import java.util.regex.Pattern;
  */
 public class GrammarReader {
 
-    // Pattern to match token definitions like: TADDALL: 'addAll';
-    private static final Pattern tokenPattern = Pattern.compile("T[A-Z0-9_]+:\\s*'([^']+)'\\s*;");
+    // Pattern to match token definitions like: K_ADDALL: 'addAll';
+    private static final Pattern tokenPattern = Pattern.compile("K_[A-Z0-9_]+:\\s*'([^']+)'\\s*;");
 
     /**
      * Parse a grammar file to extract all keyword string representations.

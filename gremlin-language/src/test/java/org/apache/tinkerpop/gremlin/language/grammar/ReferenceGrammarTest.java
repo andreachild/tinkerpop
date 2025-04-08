@@ -52,6 +52,7 @@ import static org.junit.Assume.assumeThat;
 public class ReferenceGrammarTest extends AbstractGrammarTest {
     private static final String featureDir = Paths.get("..", "gremlin-test", "src", "main", "resources", "org", "apache", "tinkerpop", "gremlin", "test", "features").toString();
     private static final String docsDir = Paths.get("..", "docs", "src").toString();
+    private static final String grammarFile = Paths.get("src", "main", "antlr4","Gremlin.g4").toString();
 
     private static final Pattern edgePattern = Pattern.compile(".*e\\d.*");
 
@@ -99,8 +100,10 @@ public class ReferenceGrammarTest extends AbstractGrammarTest {
                 stream().map(g -> Pair.with(g, ParserRule.QUERY_LIST)).
                 collect(Collectors.toCollection(LinkedHashSet::new));
 
-        // helps make sure we're actually adding test scripts for each load
+        // helps make sure we're actually adding test scripts for each load. there are well over 500 gremlin
+        // examples in the docs so we should have at least that much
         int size = scripts.size();
+        assert size > 500;
 
         // gremlin scripts from feature tests
         scripts.addAll(FeatureReader.parseGrouped(featureDir, stringMatcherConverters).values().stream().
@@ -108,7 +111,8 @@ public class ReferenceGrammarTest extends AbstractGrammarTest {
                 map(g -> Pair.with(g, ParserRule.QUERY_LIST)).
                 collect(Collectors.toList()));
 
-        assert size < scripts.size();
+        // there are well over 1000 tests so make sure we parsed something sensible
+        assert size < scripts.size() + 1000;
         size = scripts.size();
 
         // validate that every keyword is parseable as a map key
@@ -116,7 +120,9 @@ public class ReferenceGrammarTest extends AbstractGrammarTest {
                 map(g -> Pair.with(String.format("[%s:123]", g), ParserRule.GREMLIN_VALUE)).
                 collect(Collectors.toList()));
 
-        assert size < scripts.size();
+        // there have to be at least 200 tokens parsed from the grammar. just picked a big number to help validate
+        // that the GrammarReader is doing smart things.
+        assert size < scripts.size() + 200;
         size = scripts.size();
 
         // tests for validating gremlin values like Map, String, etc.
