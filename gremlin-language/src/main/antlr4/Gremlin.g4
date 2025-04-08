@@ -23,7 +23,7 @@ grammar Gremlin;
 **********************************************/
 
 gremlinValue
-    : (numericLiteral | booleanLiteral | stringLiteral | dateLiteral | nullLiteral | nanLiteral | infLiteral |
+    : (numericLiteral | booleanLiteral | stringLiteral | dateLiteral | nullLiteral |
        traversalT | traversalCardinality | traversalDirection | traversalMerge |
        structureVertex | genericLiteralSet | genericLiteralCollection | genericLiteralMap) EOF
     ;

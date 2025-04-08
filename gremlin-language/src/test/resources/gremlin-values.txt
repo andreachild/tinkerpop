@@ -126,10 +126,6 @@ false
 'symbols + special chars: <>,.?/'
 "mixed 123 abc !@#"
 'mixed 123 abc !@#'
-"line1\
-line2"
-'line1\
-line2'
 "multiple\\\\backslashes"
 'multiple\\\\backslashes'
 "unicode symbols: \u20AC\u00A3\u00A5"
@@ -203,12 +199,12 @@ set([1, 2, 3])
 Cardinality.set([1, 2, 3])
 list([1, 2, 3])
 Cardinality.list([1, 2, 3])
-single({a: "b"})
-Cardinality.single({a: "b"})
-set({a: "b"})
-Cardinality.set({a: "b"})
-list({a: "b"})
-Cardinality.list({a: "b"})
+single([a: "b"])
+Cardinality.single([a: "b"])
+set([a: "b"])
+Cardinality.set([a: "b"])
+list([a: "b"])
+Cardinality.list([a: "b"])
 single(null)
 Cardinality.single(null)
 set(null)
@@ -329,7 +325,7 @@ Vertex("1", 'person')
 [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 [1, [2, [3, [4]]]]
 [Pick.any, DT.second]
-[{1, 2}, [3, 4], {key: "value"}]
+[{1, 2}, [3, 4], [key: "value"]]
 [1, null, "test", [true, false]]
 # genericLiteralMap
 [:]

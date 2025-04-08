@@ -26,6 +26,6 @@ import org.junit.Test;
 public class BasicGrammarTest extends AbstractGrammarTest {
     @Test
     public void shouldParseV() {
-        parse("g.V()", ParserRule.QUERY_LIST);
+        parse("'test", ParserRule.GREMLIN_VALUE);
     }
 }

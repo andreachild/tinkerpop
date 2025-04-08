@@ -112,17 +112,17 @@ public class ReferenceGrammarTest extends AbstractGrammarTest {
                 collect(Collectors.toList()));
 
         // there are well over 1000 tests so make sure we parsed something sensible
-        assert size < scripts.size() + 1000;
+        assert size + 1000 < scripts.size();
         size = scripts.size();
 
         // validate that every keyword is parseable as a map key
-        scripts.addAll(GrammarReader.parse("src/main/antlr4/Gremlin.g4").stream().
+        scripts.addAll(GrammarReader.parse(grammarFile).stream().
                 map(g -> Pair.with(String.format("[%s:123]", g), ParserRule.GREMLIN_VALUE)).
                 collect(Collectors.toList()));
 
         // there have to be at least 200 tokens parsed from the grammar. just picked a big number to help validate
         // that the GrammarReader is doing smart things.
-        assert size < scripts.size() + 200;
+        assert size + 200 < scripts.size();
         size = scripts.size();
 
         // tests for validating gremlin values like Map, String, etc.
@@ -137,7 +137,8 @@ public class ReferenceGrammarTest extends AbstractGrammarTest {
             }
         }
 
-        assert size < scripts.size();
+        // at least 300 lines in gremlin-values.txt
+        assert size + 300 < scripts.size();
 
         return scripts;
     }
@@ -149,17 +150,19 @@ public class ReferenceGrammarTest extends AbstractGrammarTest {
     public void test_parse() {
         final String script = parseTestItem.getValue0();
 
-        // can't handle maps with complex embedded types at the moment - basically one Gremlin statement at this point
-        assumeThat("Complex embedded types are not supported", script.contains("l[\"666\"]"), is(false));
-        assumeThat("Lambdas are not supported", script.contains("Lambda.function("), is(false));
-        // start of a closure
-        assumeThat("Lambdas are not supported", script.contains("{"), is(false));
-        assumeThat("withComputer() step is not supported", script.startsWith("g.withComputer("), is(false));
-        assumeThat("Edge instances are not supported", edgePattern.matcher(script).matches(), is(false));
-        assumeThat("fill() terminator is not supported", script.contains("fill("), is(false));
-        assumeThat("withoutStrategies() is not supported", script.contains("withoutStrategies("), is(false));
-        assumeThat("program() is not supported", script.contains("program("), is(false));
-        assumeThat("Casts are not supported", script.contains("(Map)"), is(false));
+        if (parseTestItem.getValue1() == ParserRule.QUERY_LIST) {
+            // can't handle maps with complex embedded types at the moment - basically one Gremlin statement at this point
+            assumeThat("Complex embedded types are not supported", script.contains("l[\"666\"]"), is(false));
+            assumeThat("Lambdas are not supported", script.contains("Lambda.function("), is(false));
+            // start of a closure
+            assumeThat("Lambdas are not supported", script.contains("{"), is(false));
+            assumeThat("withComputer() step is not supported", script.startsWith("g.withComputer("), is(false));
+            assumeThat("Edge instances are not supported", edgePattern.matcher(script).matches(), is(false));
+            assumeThat("fill() terminator is not supported", script.contains("fill("), is(false));
+            assumeThat("withoutStrategies() is not supported", script.contains("withoutStrategies("), is(false));
+            assumeThat("program() is not supported", script.contains("program("), is(false));
+            assumeThat("Casts are not supported", script.contains("(Map)"), is(false));
+        }
 
         parse(script, parseTestItem.getValue1());
     }

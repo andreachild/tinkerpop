@@ -44,8 +44,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.apache.tinkerpop.gremlin.util.GremlinValueComparator.Type.List;
-
 /**
  * A Gremlin to Gremlin translator. Makes no changes to input except:
  * <ul>
