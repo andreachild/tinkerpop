@@ -54,7 +54,7 @@ public class ReferenceGrammarTest extends AbstractGrammarTest {
     private static final String docsDir = Paths.get("..", "docs", "src").toString();
     private static final String grammarFile = Paths.get("src", "main", "antlr4","Gremlin.g4").toString();
 
-    private static final Pattern edgePattern = Pattern.compile(".*e\\d.*");
+    private static final Pattern lambdaPattern = Pattern.compile("g\\..*(branch|by|flatMap|map|filter|sack|sideEffect|fold\\(\\d*\\)|withSack)\\s*\\(?\\s*\\{.*");
 
     private static final List<Pair<Pattern, BiFunction<String,String,String>>> stringMatcherConverters = new ArrayList<Pair<Pattern, BiFunction<String,String,String>>>() {{
         add(Pair.with(Pattern.compile("m\\[(.*)\\]"), (k,v) -> {
@@ -117,12 +117,14 @@ public class ReferenceGrammarTest extends AbstractGrammarTest {
 
         // validate that every keyword is parseable as a map key
         scripts.addAll(GrammarReader.parse(grammarFile).stream().
-                map(g -> Pair.with(String.format("[%s:123]", g), ParserRule.GREMLIN_VALUE)).
-                collect(Collectors.toList()));
+                flatMap(g -> Stream.of(
+                        Pair.with(String.format("[%s:123]", g), ParserRule.GREMLIN_VALUE),
+                        Pair.with(String.format("g.inject([%s:123])", g), ParserRule.QUERY_LIST)
+                )).collect(Collectors.toList()));
 
         // there have to be at least 200 tokens parsed from the grammar. just picked a big number to help validate
         // that the GrammarReader is doing smart things.
-        assert size + 200 < scripts.size();
+        assert size + 400 < scripts.size();
         size = scripts.size();
 
         // tests for validating gremlin values like Map, String, etc.
@@ -155,11 +157,9 @@ public class ReferenceGrammarTest extends AbstractGrammarTest {
             assumeThat("Complex embedded types are not supported", script.contains("l[\"666\"]"), is(false));
             assumeThat("Lambdas are not supported", script.contains("Lambda.function("), is(false));
             // start of a closure
-            assumeThat("Lambdas are not supported", script.contains("{"), is(false));
+            assumeThat("Lambdas are not supported", lambdaPattern.matcher(script).matches(), is(false));
             assumeThat("withComputer() step is not supported", script.startsWith("g.withComputer("), is(false));
-            assumeThat("Edge instances are not supported", edgePattern.matcher(script).matches(), is(false));
             assumeThat("fill() terminator is not supported", script.contains("fill("), is(false));
-            assumeThat("withoutStrategies() is not supported", script.contains("withoutStrategies("), is(false));
             assumeThat("program() is not supported", script.contains("program("), is(false));
             assumeThat("Casts are not supported", script.contains("(Map)"), is(false));
         }
