@@ -15,3 +15,5 @@ test"
 [{a: 123}]
 [1, {a: 123}]
 {{a: 123}}
+[Scope.local: 100]
+[Order.asc: 100]

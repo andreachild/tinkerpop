@@ -2299,11 +2299,6 @@ public class TranslateVisitor extends AbstractParseTreeVisitor<Void> implements 
     }
 
     @Override
-    public Void visitGremlinValue(final GremlinParser.GremlinValueContext ctx) {
-        return visitChildren(ctx);
-    }
-
-    @Override
     public Void visitTraversalTShort(final GremlinParser.TraversalTShortContext ctx) {
         appendExplicitNaming(ctx.getText(), T.class.getSimpleName());
         return null;

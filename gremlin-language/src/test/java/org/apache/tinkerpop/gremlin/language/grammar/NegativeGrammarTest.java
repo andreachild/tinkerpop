@@ -56,7 +56,7 @@ public class NegativeGrammarTest extends AbstractGrammarTest {
             final BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
             String line;
             while ((line = reader.readLine()) != null) {
-                queries.add(Pair.with(String.format("%s", line), ParserRule.GREMLIN_VALUE));
+                queries.add(Pair.with(String.format("g.inject(%s)", line), ParserRule.QUERY_LIST));
             }
         }
 

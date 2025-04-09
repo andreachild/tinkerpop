@@ -22,12 +22,6 @@ grammar Gremlin;
     PARSER RULES
 **********************************************/
 
-gremlinValue
-    : (numericLiteral | booleanLiteral | stringLiteral | dateLiteral | nullLiteral |
-       traversalT | traversalCardinality | traversalDirection | traversalMerge |
-       structureVertex | genericLiteralSet | genericLiteralCollection | genericLiteralMap) EOF
-    ;
-
 queryList
     : query (SEMI? query)* SEMI? EOF
     ;

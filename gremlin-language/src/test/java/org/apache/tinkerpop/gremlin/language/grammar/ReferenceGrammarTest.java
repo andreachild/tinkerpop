@@ -118,13 +118,12 @@ public class ReferenceGrammarTest extends AbstractGrammarTest {
         // validate that every keyword is parseable as a map key
         scripts.addAll(GrammarReader.parse(grammarFile).stream().
                 flatMap(g -> Stream.of(
-                        Pair.with(String.format("[%s:123]", g), ParserRule.GREMLIN_VALUE),
                         Pair.with(String.format("g.inject([%s:123])", g), ParserRule.QUERY_LIST)
                 )).collect(Collectors.toList()));
 
         // there have to be at least 200 tokens parsed from the grammar. just picked a big number to help validate
         // that the GrammarReader is doing smart things.
-        assert size + 400 < scripts.size();
+        assert size + 200 < scripts.size();
         size = scripts.size();
 
         // tests for validating gremlin values like Map, String, etc.
@@ -134,7 +133,7 @@ public class ReferenceGrammarTest extends AbstractGrammarTest {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (!line.startsWith("#") && !line.isEmpty()) {
-                    scripts.add(Pair.with(line, ParserRule.GREMLIN_VALUE));
+                    scripts.add(Pair.with(String.format("g.inject(%s)", line), ParserRule.QUERY_LIST));
                 }
             }
         }

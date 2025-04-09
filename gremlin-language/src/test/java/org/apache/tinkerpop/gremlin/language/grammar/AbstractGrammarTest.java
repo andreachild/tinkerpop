@@ -26,9 +26,11 @@ import static org.junit.Assert.fail;
 
 public class AbstractGrammarTest {
 
+    /**
+     * Allows control of the type of parsing to do for a particular test line.
+     */
     public enum ParserRule {
-        QUERY_LIST,
-        GREMLIN_VALUE
+        QUERY_LIST
     }
 
     protected void parse(final String query, final boolean expectFailures) {
@@ -40,6 +42,7 @@ public class AbstractGrammarTest {
     }
 
     protected void parse(final String query, final ParserRule rule, final boolean expectFailures) {
+
         try {
             final CharStream in = CharStreams.fromString(query);
             final GremlinLexer lexer = new GremlinLexer(in);
@@ -61,9 +64,6 @@ public class AbstractGrammarTest {
                     case QUERY_LIST:
                         visitor.visit(parser.queryList());
                         break;
-                    case GREMLIN_VALUE:
-                        visitor.visit(parser.gremlinValue());
-                        break;
                 }
             } catch (Exception ex) {
                 // Retry parsing with LL prediction mode
@@ -77,9 +77,6 @@ public class AbstractGrammarTest {
                 switch (rule) {
                     case QUERY_LIST:
                         visitor.visit(parser.queryList());
-                        break;
-                    case GREMLIN_VALUE:
-                        visitor.visit(parser.gremlinValue());
                         break;
                 }
             }
