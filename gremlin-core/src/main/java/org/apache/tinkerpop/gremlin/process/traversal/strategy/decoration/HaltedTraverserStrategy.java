@@ -19,6 +19,7 @@
 
 package org.apache.tinkerpop.gremlin.process.traversal.strategy.decoration;
 
+import org.apache.commons.configuration2.BaseConfiguration;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.MapConfiguration;
 import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
@@ -27,6 +28,7 @@ import org.apache.tinkerpop.gremlin.process.traversal.Traverser;
 import org.apache.tinkerpop.gremlin.process.traversal.strategy.AbstractTraversalStrategy;
 import org.apache.tinkerpop.gremlin.structure.util.detached.DetachedFactory;
 import org.apache.tinkerpop.gremlin.structure.util.reference.ReferenceFactory;
+import org.apache.tinkerpop.gremlin.util.GremlinDisabledListDelimiterHandler;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -75,10 +77,10 @@ public final class HaltedTraverserStrategy extends AbstractTraversalStrategy<Tra
 
     @Override
     public Configuration getConfiguration() {
-        final Map<String, Object> map = new HashMap<>();
-        map.put(STRATEGY, HaltedTraverserStrategy.class.getCanonicalName());
-        map.put(HALTED_TRAVERSER_FACTORY, this.haltedTraverserFactory.getCanonicalName());
-        return new MapConfiguration(map);
+        final BaseConfiguration conf = new BaseConfiguration();
+        conf.setListDelimiterHandler(GremlinDisabledListDelimiterHandler.instance());
+        conf.setProperty(HALTED_TRAVERSER_FACTORY, this.haltedTraverserFactory.getCanonicalName());
+        return conf;
     }
 
     ////////////

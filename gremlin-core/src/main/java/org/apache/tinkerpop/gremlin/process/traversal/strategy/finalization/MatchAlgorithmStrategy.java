@@ -18,6 +18,7 @@
  */
 package org.apache.tinkerpop.gremlin.process.traversal.strategy.finalization;
 
+import org.apache.commons.configuration2.BaseConfiguration;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.MapConfiguration;
 import org.apache.tinkerpop.gremlin.process.traversal.Step;
@@ -26,6 +27,7 @@ import org.apache.tinkerpop.gremlin.process.traversal.TraversalStrategy;
 import org.apache.tinkerpop.gremlin.process.traversal.step.map.MatchStep;
 import org.apache.tinkerpop.gremlin.process.traversal.strategy.AbstractTraversalStrategy;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
+import org.apache.tinkerpop.gremlin.util.GremlinDisabledListDelimiterHandler;
 
 import java.util.Collections;
 
@@ -64,9 +66,10 @@ public final class MatchAlgorithmStrategy extends AbstractTraversalStrategy<Trav
 
     @Override
     public Configuration getConfiguration() {
-        return new MapConfiguration(Collections.singletonMap(MATCH_ALGORITHM, null != this.matchAlgorithmClass.getDeclaringClass() ?
-                this.matchAlgorithmClass.getCanonicalName().replace("." + this.matchAlgorithmClass.getSimpleName(), "$" + this.matchAlgorithmClass.getSimpleName()) :
-                this.matchAlgorithmClass.getCanonicalName()));
+        final BaseConfiguration config = new BaseConfiguration();
+        config.setListDelimiterHandler(GremlinDisabledListDelimiterHandler.instance());
+        config.setProperty(MATCH_ALGORITHM, this.matchAlgorithmClass.getName());
+        return config;
     }
 
     public static Builder build() {

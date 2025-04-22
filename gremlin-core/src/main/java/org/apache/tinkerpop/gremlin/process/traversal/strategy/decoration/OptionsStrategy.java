@@ -63,7 +63,7 @@ public class OptionsStrategy extends AbstractTraversalStrategy<TraversalStrategy
 
     @Override
     public void apply(final Traversal.Admin<?, ?> traversal) {
-        // has not effect on the traversal itself - simply carries a options with it that individual steps
+        // has not affect on the traversal itself - simply carries a options with it that individual steps
         // can choose to use or not.
     }
 
