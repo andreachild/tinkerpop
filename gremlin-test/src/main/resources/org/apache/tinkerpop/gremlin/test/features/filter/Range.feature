@@ -191,7 +191,7 @@ Feature: Step - range()
       """
       g.V().fold().range(Scope.local, 6, 7)
       """
-    When iterated to list
+    When iterated next
     Then the result should be empty
 
   Scenario: g_V_outE_valuesXweightX_fold_orderXlocalX_skipXlocal_2X
