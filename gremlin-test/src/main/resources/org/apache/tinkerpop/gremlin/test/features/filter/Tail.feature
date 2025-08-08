@@ -99,8 +99,8 @@ Feature: Step - tail()
     When iterated to list
     Then the result should be unordered
       | result |
-      | ripple |
-      | lop |
+      | l[ripple] |
+      | l[lop] |
 
   @GraphComputerVerificationReferenceOnly
   Scenario: g_V_asXaX_out_asXaX_out_asXaX_selectXaX_byXunfold_valuesXnameX_foldX_tailXlocalX
@@ -112,8 +112,8 @@ Feature: Step - tail()
     When iterated to list
     Then the result should be unordered
       | result |
-      | ripple |
-      | lop |
+      | l[ripple] |
+      | l[lop] |
 
   Scenario: g_V_asXaX_out_asXbX_out_asXcX_selectXa_b_cX_byXnameX_tailXlocal_2X
     Given the modern graph
@@ -149,8 +149,8 @@ Feature: Step - tail()
     When iterated to list
     Then the result should be unordered
       | result |
-      | ripple |
-      | lop |
+      | l[ripple] |
+      | l[lop] |
 
   @GraphComputerVerificationReferenceOnly
   Scenario: g_V_asXaX_out_asXaX_out_asXaX_selectXmixed_aX_byXunfold_valuesXnameX_foldX_tailXlocalX
@@ -162,8 +162,8 @@ Feature: Step - tail()
     When iterated to list
     Then the result should be unordered
       | result |
-      | ripple |
-      | lop |
+      | l[ripple] |
+      | l[lop] |
 
   @GraphComputerVerificationReferenceOnly
   Scenario: g_V_asXaX_out_asXaX_out_asXaX_selectXmixed_aX_byXlimitXlocal_0XX_tailXlocal_1X
@@ -172,7 +172,7 @@ Feature: Step - tail()
       """
       g.V().as("a").out().as("a").out().as("a").select(Pop.mixed, "a").by(__.limit(Scope.local, 0)).tail(Scope.local, 1)
       """
-    When iterated to list
+    When iterated next
     Then the result should be empty
 
   @GraphComputerVerificationReferenceOnly

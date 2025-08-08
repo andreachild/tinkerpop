@@ -794,9 +794,9 @@ Feature: Step - mergeE()
       """
       g.inject(xx1, xx1, xx2).
         fold().
-        mergeE(__.limit(Scope.local,1)).
-          option(Merge.onCreate, __.range(Scope.local, 1, 2)).
-          option(Merge.onMatch, __.tail(Scope.local))
+        mergeE(__.limit(Scope.local,1).unfold()).
+          option(Merge.onCreate, __.range(Scope.local, 1, 2).unfold()).
+          option(Merge.onMatch, __.tail(Scope.local).unfold())
       """
     When iterated to list
     Then the result should have a count of 1
@@ -828,9 +828,9 @@ Feature: Step - mergeE()
       """
       g.inject(xx1, xx1, xx2).
         fold().
-        mergeE(__.limit(Scope.local,1)).
-          option(Merge.onCreate, __.range(Scope.local, 1, 2)).
-          option(Merge.onMatch, __.tail(Scope.local))
+        mergeE(__.limit(Scope.local,1).unfold()).
+          option(Merge.onCreate, __.range(Scope.local, 1, 2).unfold()).
+          option(Merge.onMatch, __.tail(Scope.local).unfold())
       """
     When iterated to list
     Then the result should have a count of 1
