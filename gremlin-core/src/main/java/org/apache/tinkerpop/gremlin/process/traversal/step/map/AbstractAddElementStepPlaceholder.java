@@ -28,6 +28,7 @@ import org.apache.tinkerpop.gremlin.process.traversal.step.Scoping;
 import org.apache.tinkerpop.gremlin.process.traversal.step.Writing;
 import org.apache.tinkerpop.gremlin.process.traversal.step.util.AbstractStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.util.GValueHelper;
+import org.apache.tinkerpop.gremlin.process.traversal.step.util.Parameters;
 import org.apache.tinkerpop.gremlin.process.traversal.step.util.event.CallbackRegistry;
 import org.apache.tinkerpop.gremlin.process.traversal.step.util.event.Event;
 import org.apache.tinkerpop.gremlin.process.traversal.traverser.TraverserRequirement;
@@ -54,6 +55,7 @@ public abstract class AbstractAddElementStepPlaceholder<S, E extends Element, X 
     protected Map<Object, List<Object>> properties = new HashMap<>();
     protected GValue<Object> elementId;
     protected Set<String> scopeKeys = new HashSet<>();
+    protected Parameters withConfiguration = new Parameters();
 
     public AbstractAddElementStepPlaceholder(final Traversal.Admin traversal, final String label) {
         this(traversal, label == null ? null : new ConstantTraversal<>(label));
@@ -130,6 +132,11 @@ public abstract class AbstractAddElementStepPlaceholder<S, E extends Element, X 
         }
         if (elementId != null) {
             step.setElementId(elementId.get());
+        }
+        for (Map.Entry<Object, List<Object>> entry : withConfiguration.getRaw().entrySet()) {
+            for (Object value : entry.getValue()) {
+                step.configure(entry.getKey(), value);
+            }
         }
         TraversalHelper.copyLabels(this, step, false);
     }
@@ -318,7 +325,17 @@ public abstract class AbstractAddElementStepPlaceholder<S, E extends Element, X 
 
         clone.elementId = this.elementId;
         clone.scopeKeys = new HashSet<>(this.scopeKeys);
+        clone.withConfiguration = this.withConfiguration.clone();
         return clone;
     }
 
+    @Override
+    public Parameters getParameters() {
+        return this.withConfiguration;
+    }
+
+    @Override
+    public void configure(final Object... keyValues) {
+        this.withConfiguration.set(this, keyValues);
+    }
 }

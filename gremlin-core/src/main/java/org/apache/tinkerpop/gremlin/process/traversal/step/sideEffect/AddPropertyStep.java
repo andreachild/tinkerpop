@@ -48,7 +48,7 @@ import java.util.Set;
  * @author Marko A. Rodriguez (http://markorodriguez.com)
  */
 public class AddPropertyStep<S extends Element> extends SideEffectStep<S>
-        implements AddPropertyStepContract<S>, Writing<Event.ElementPropertyChangedEvent>, Deleting<Event.ElementPropertyChangedEvent>, Configuring {
+        implements AddPropertyStepContract<S>, Writing<Event.ElementPropertyChangedEvent>, Deleting<Event.ElementPropertyChangedEvent> {
 
     private Parameters internalParameters = new Parameters();
     private Parameters withConfiguration = new Parameters();
