@@ -56,6 +56,7 @@ services:
       - GREMLIN_SERVER_BASIC_AUTH_URL=https://gremlin-server-test-python:{}/gremlin
       - IO_TEST_DIRECTORY=/python_app/gremlin-test/graphbinary/
       - IO_TEST_DIRECTORY_GRAPHSON=/python_app/gremlin-test/graphson/
+      - VERTEX_LABEL=python-example
     working_dir: /python_app
     command: >
       bash -c "pip install .[test,kerberos]
