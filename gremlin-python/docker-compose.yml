@@ -56,6 +56,7 @@ services:
       - GREMLIN_SERVER_BASIC_AUTH_URL=https://gremlin-server-test-python:{}/gremlin
       - IO_TEST_DIRECTORY=/python_app/gremlin-test/graphbinary/
       - IO_TEST_DIRECTORY_GRAPHSON=/python_app/gremlin-test/graphson/
+      - VERTEX_LABEL=python-example
     working_dir: /python_app
     command: >
       bash -c "pip install .[test,kerberos]
@@ -64,7 +65,12 @@ services:
       && radish -f dots -e -t -b ./radish ./gremlin-test --user-data='serializer=application/vnd.graphbinary-v4.0' --user-data='parameterize=true'
       && radish -f dots -e -t -b ./radish ./gremlin-test --user-data='serializer=application/vnd.graphbinary-v4.0'
       && radish -f dots -e -t -b ./radish ./gremlin-test --user-data='serializer=application/vnd.gremlin-v4.0+json' --user-data='parameterize=true'
-      && radish -f dots -e -t -b ./radish ./gremlin-test --user-data='serializer=application/vnd.gremlin-v4.0+json';
+      && radish -f dots -e -t -b ./radish ./gremlin-test --user-data='serializer=application/vnd.gremlin-v4.0+json'
+      && echo 'Running examples...'
+      && python3 examples/basic_gremlin.py
+      && python3 examples/connections.py
+      && python3 examples/modern_traversals.py
+      && echo 'All examples completed successfully';
       EXIT_CODE=$$?; chown -R `stat -c "%u:%g" .` .; exit $$EXIT_CODE"
     depends_on:
       gremlin-server-test-python:
