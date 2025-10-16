@@ -70,7 +70,7 @@ def with_auth():
         ssl_opts.check_hostname = False
         ssl_opts.verify_mode = ssl.CERT_NONE
         rc = DriverRemoteConnection(server_url, 'g', username='stephen', password='password',
-                                    transport_factory=lambda: AiohttpTransport(ssl_options=ssl_opts))
+                                    transport_factory=lambda: AiohttpHTTPTransport(ssl_options=ssl_opts))
     else:
         rc = DriverRemoteConnection(server_url, 'g', username='stephen', password='password')
     
