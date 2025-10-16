@@ -25,8 +25,8 @@ sys.path.append("..")
 from gremlin_python.process.anonymous_traversal import traversal
 from gremlin_python.process.strategies import *
 from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
-from gremlin_python.driver.serializer import GraphBinarySerializersV1
-from gremlin_python.driver.aiohttp.transport import AiohttpTransport
+from gremlin_python.driver.serializer import GraphSONSerializersV4
+from gremlin_python.driver.aiohttp.transport import AiohttpHTTPTransport
 
 VERTEX_LABEL = os.getenv('VERTEX_LABEL', 'connection')
 
