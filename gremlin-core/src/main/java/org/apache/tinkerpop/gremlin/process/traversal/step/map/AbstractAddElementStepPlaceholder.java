@@ -20,7 +20,6 @@ package org.apache.tinkerpop.gremlin.process.traversal.step.map;
 
 import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
 import org.apache.tinkerpop.gremlin.process.traversal.Traverser;
-import org.apache.tinkerpop.gremlin.process.traversal.lambda.ConstantTraversal;
 import org.apache.tinkerpop.gremlin.process.traversal.lambda.GValueConstantTraversal;
 import org.apache.tinkerpop.gremlin.process.traversal.step.GValue;
 import org.apache.tinkerpop.gremlin.process.traversal.step.GValueHolder;
@@ -128,20 +127,7 @@ public abstract class AbstractAddElementStepPlaceholder<S, E extends Element, X 
 
     @Override
     public int hashCode() {
-        int hash = super.hashCode();
-        if (label != null) {
-            hash ^= label.hashCode();
-        }
-        if (elementId != null) {
-            hash ^= elementId.hashCode();
-        }
-        if (properties != null) {
-            for (Map.Entry<Object, List<Object>> entry : properties.entrySet()) {
-                hash ^= Objects.hashCode(entry.getKey());
-                hash ^= Objects.hashCode(entry.getValue());
-            }
-        }
-        hash ^= withConfiguration.hashCode();
+        int hash = Objects.hash(super.hashCode(), label, elementId, properties, withConfiguration);
         return hash;
     }
 
