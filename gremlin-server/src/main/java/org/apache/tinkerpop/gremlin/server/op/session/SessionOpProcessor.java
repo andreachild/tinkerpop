@@ -141,6 +141,9 @@ public class SessionOpProcessor extends AbstractEvalOpProcessor {
         }};
     }
 
+    // Determines whether to destroy the session after a successful COMMIT/ROLLBACK. Set during init().
+    private boolean destroySessionPostGraphOp;
+
     public SessionOpProcessor() {
         super(false);
     }
@@ -154,6 +157,7 @@ public class SessionOpProcessor extends AbstractEvalOpProcessor {
     public void init(final Settings settings) {
         this.maxParameters = (int) settings.optionalProcessor(SessionOpProcessor.class).orElse(DEFAULT_SETTINGS).config.
                 getOrDefault(CONFIG_MAX_PARAMETERS, DEFAULT_MAX_PARAMETERS);
+        this.destroySessionPostGraphOp = settings.destroySessionPostGraphOp;
     }
 
     /**
@@ -546,6 +550,13 @@ public class SessionOpProcessor extends AbstractEvalOpProcessor {
                                 .statusAttributes(attributes)
                                 .create());
 
+                        if (destroySessionPostGraphOp) {
+                            // Setting force to true prevents deadlock when this thread attempts to destroy the session.
+                            // This should be safe since either a commit or rollback just finished so the transaction
+                            // shouldn't be open.
+                            session.manualKill(true);
+                        }
+
                     } catch (Throwable t) {
                         onError(graph, context);
                         // if any exception in the chain is TemporaryException or Failure then we should respond with the
@@ -571,6 +582,13 @@ public class SessionOpProcessor extends AbstractEvalOpProcessor {
                                     .statusMessage(t.getMessage())
                                     .statusAttributeException(t).create());
                         }
+
+                        if (destroySessionPostGraphOp) {
+                            // Destroy the session after a successful rollback due to error. Placed here rather than
+                            // in a finally block since we don't want to end the session if no commit/rollback succeeded.
+                            session.manualKill(true);
+                        }
+
                         if (t instanceof Error) {
                             //Re-throw any errors to be handled by and set as the result the FutureTask
                             throw t;
